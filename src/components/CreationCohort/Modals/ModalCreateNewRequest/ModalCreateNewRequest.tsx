@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import {
@@ -67,7 +67,7 @@ const ModalCreateNewRequest: React.FC<{
     )
   }
 
-  const _fetchProject = async () => {
+  const _fetchProject = useCallback(async () => {
     let projectsList = []
     if (projectState && projectState.projectsList && projectState.projectsList.length > 0) {
       projectsList = projectState.projectsList
@@ -86,9 +86,9 @@ const ModalCreateNewRequest: React.FC<{
       _onChangeValue('parent_folder', NEW_PROJECT_ID)
       onChangeProjectName(`Projet de recherche par défaut`)
     }
-  }
+  }, [dispatch, isEdition, projectState, selectedRequest])
 
-  const _fetchRequestNumber = async () => {
+  const _fetchRequestNumber = useCallback(async () => {
     if (isEdition) return
 
     if (requestState && requestState.requestsList) {
@@ -98,7 +98,7 @@ const ModalCreateNewRequest: React.FC<{
       if (!requestResponse) return
       _onChangeValue('name', `Nouvelle requête ${(requestResponse?.count || 0) + 1}`)
     }
-  }
+  }, [dispatch, isEdition, requestState])
 
   useEffect(() => {
     const fetcher = async () => {
@@ -112,7 +112,7 @@ const ModalCreateNewRequest: React.FC<{
     return () => {
       onChangeProjectName('')
     }
-  }, [])
+  }, [_fetchProject, _fetchRequestNumber])
 
   const handleClose = () => {
     if (onClose && typeof onClose === 'function') {

@@ -124,7 +124,8 @@ const DataTableCompositionLine: React.FC<{
   searchMode: boolean
   groupId?: string
 }> = ({ document, deidentified, showIpp, searchMode, groupId }) => {
-  const { classes, cx } = useStyles()
+  const style = useStyles()
+  const { classes, cx } = style
 
   const [open, setOpen] = useState<string | null>(null)
 
@@ -159,7 +160,7 @@ const DataTableCompositionLine: React.FC<{
           <Typography>
             {date} {hour}
           </Typography>
-          {getStatusShip(status)}
+          {getStatusShip(style, status)}
         </TableCell>
 
         {showIpp && (
@@ -227,9 +228,11 @@ const DataTableCompositionLine: React.FC<{
   )
 }
 
-const getStatusShip = (type?: CompositionStatusKind | DocumentReferenceStatusKind) => {
-  const { classes } = useStyles()
-
+const getStatusShip = (
+  style: ReturnType<typeof useStyles>,
+  type?: CompositionStatusKind | DocumentReferenceStatusKind
+) => {
+  const { classes } = style
   if (type === 'final' || type === 'current') {
     return (
       <Chip

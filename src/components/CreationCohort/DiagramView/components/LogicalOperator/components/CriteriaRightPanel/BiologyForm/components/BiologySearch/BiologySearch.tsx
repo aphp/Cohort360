@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import {
   Breadcrumbs,
@@ -138,7 +138,7 @@ const BiologySearch: React.FC<BiologySearchProps> = (props) => {
     onConfirm()
   }
 
-  const getBiologySearchResults = async () => {
+  const getBiologySearchResults = useCallback(async () => {
     if (debouncedSearchItem && debouncedSearchItem.length >= 2) {
       try {
         setLoading(true)
@@ -165,11 +165,11 @@ const BiologySearch: React.FC<BiologySearchProps> = (props) => {
         anabio: []
       })
     }
-  }
+  }, [criteria.fetch, debouncedSearchItem])
 
   useEffect(() => {
     getBiologySearchResults()
-  }, [debouncedSearchItem])
+  }, [getBiologySearchResults])
 
   return (
     <Grid className={classes.root}>

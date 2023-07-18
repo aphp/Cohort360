@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Tabs, Tab } from '@mui/material'
 
 import useStyles from './styles'
@@ -53,7 +53,7 @@ const Index = (props: any) => {
       defaultBiology.type,
       dispatch
     )
-  const _initSyncHierarchyTableEffect = async () => {
+  const _initSyncHierarchyTableEffect = useCallback(async () => {
     await initSyncHierarchyTableEffect(
       biologyHierarchy,
       selectedCriteria,
@@ -62,10 +62,16 @@ const Index = (props: any) => {
       defaultBiology.type,
       dispatch
     )
-  }
+    // TODO fix initSyncHierarchyTableEffect, because it's mess in there
+    // it shouldn't depends on the hierarchy or selectedCriteria or defaultCriteria since it's changing it everytime
+    // also PmsiListType type should be renamed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch])
+
   useEffect(() => {
     _initSyncHierarchyTableEffect()
-  }, [])
+  }, [_initSyncHierarchyTableEffect])
+
   return (
     <>
       <Tabs

@@ -59,7 +59,7 @@ const InputAutocompleteAsync: FC<InputAutocompleteAsyncProps> = (props) => {
     return () => {
       active = false
     }
-  }, [searchValue])
+  }, [getAutocompleteOptions, searchValue])
 
   useEffect(() => {
     if (!open) {

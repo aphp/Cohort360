@@ -190,7 +190,7 @@ const MedicationHierarchy: React.FC<MedicationHierarchyProps> = (props) => {
       (item: PmsiListType) => findEquivalentRowInItemAndSubItems(item, medicationHierarchy).equivalentRow
     )
     setCurrentState(newList)
-  }, [initialState, medicationHierarchy])
+  }, [initialState, medicationHierarchy, selectedCriteria])
 
   useEffect(() => {
     if (isLoadingSyncHierarchyTable > 0 || isLoadingMedication > 0) {

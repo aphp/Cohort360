@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { useIdleTimer } from 'react-idle-timer'
 import { useNavigate } from 'react-router-dom'
 
@@ -52,13 +52,13 @@ const AutoLogoutContainer = () => {
     onAction: handleOnAction
   })
 
-  const logout = () => {
+  const logout = useCallback(() => {
     dispatch(closeAction())
     navigate('/')
     localStorage.clear()
     dispatch(logoutAction())
     pause()
-  }
+  }, [dispatch, navigate, pause])
 
   const stayActive = async () => {
     try {
@@ -70,7 +70,7 @@ const AutoLogoutContainer = () => {
     }
   }
 
-  const refreshToken = async () => {
+  const refreshToken = useCallback(async () => {
     try {
       const res = await apiBackend.post(`/accounts/refresh/`)
 
@@ -84,7 +84,7 @@ const AutoLogoutContainer = () => {
       console.error(error)
       logout()
     }
-  }
+  }, [logout])
 
   useEffect(() => {
     start()
@@ -95,7 +95,7 @@ const AutoLogoutContainer = () => {
       clearInterval(intervall)
       pause()
     }
-  }, [me])
+  }, [me, pause, refreshToken, start])
 
   if (!me) return <></>
 

@@ -93,7 +93,7 @@ const CompositionForm: React.FC<TestGeneratedFormProps> = (props) => {
     }
 
     checkDocumentSearch()
-  }, [debouncedSearchItem])
+  }, [debouncedSearchItem, defaultValues.search, searchInputError])
 
   return (
     <Grid className={classes.root}>

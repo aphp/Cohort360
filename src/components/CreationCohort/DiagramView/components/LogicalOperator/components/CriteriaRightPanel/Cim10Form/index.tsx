@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Tab, Tabs } from '@mui/material'
 
 import Cim10Form from './components/Form/Cim10Form'
@@ -48,7 +48,7 @@ const Index = (props: any) => {
       defaultCondition.type,
       dispatch
     )
-  const _initSyncHierarchyTableEffect = async () => {
+  const _initSyncHierarchyTableEffect = useCallback(async () => {
     await initSyncHierarchyTableEffect(
       cim10Hierarchy,
       selectedCriteria,
@@ -57,10 +57,15 @@ const Index = (props: any) => {
       defaultCondition.type,
       dispatch
     )
-  }
+    // TODO fix initSyncHierarchyTableEffect, because it's mess in there
+    // it shouldn't depends on the hierarchy or selectedCriteria or defaultCriteria since it's changing it everytime
+    // also PmsiListType type should be renamed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch])
+
   useEffect(() => {
     _initSyncHierarchyTableEffect()
-  }, [])
+  }, [_initSyncHierarchyTableEffect])
 
   return (
     <>

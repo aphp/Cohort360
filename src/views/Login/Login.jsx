@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import localforage from 'localforage'
 import {
@@ -112,69 +112,61 @@ const Login = () => {
   const urlParams = new URLSearchParams(window.location.search)
   const code = urlParams.get('code')
 
-  useEffect(() => {
-    localforage.setItem('persist:root', '')
-    if (code) setAuthCode(code)
-  }, [])
+  const getPractitionerData = useCallback(
+    async (practitioner, lastConnection, maintenance, accessExpirations = []) => {
+      if (practitioner) {
+        const practitionerPerimeters = await services.perimeters.getPerimeters()
 
-  useEffect(() => {
-    if (authCode) {
-      login()
-    }
-  }, [authCode])
-
-  const getPractitionerData = async (practitioner, lastConnection, maintenance, accessExpirations = []) => {
-    if (practitioner) {
-      const practitionerPerimeters = await services.perimeters.getPerimeters()
-
-      if (practitionerPerimeters && practitionerPerimeters.errorType) {
-        if (practitionerPerimeters.errorType === 'fhir') {
-          setLoading(false)
-          return (
-            setError(true),
-            setErrorMessage(
-              'Une erreur FHIR est survenue. Si elle persiste, veuillez contacter le support au : dsi-id-recherche-support-cohort360@aphp.fr.'
+        if (practitionerPerimeters && practitionerPerimeters.errorType) {
+          if (practitionerPerimeters.errorType === 'fhir') {
+            setLoading(false)
+            return (
+              setError(true),
+              setErrorMessage(
+                'Une erreur FHIR est survenue. Si elle persiste, veuillez contacter le support au : dsi-id-recherche-support-cohort360@aphp.fr.'
+              )
             )
-          )
-        } else if (practitionerPerimeters.errorType === 'back') {
-          setLoading(false)
-          return (
-            setError(true),
-            setErrorMessage(
-              'Une erreur DJANGO est survenue. Si elle persiste, veuillez contacter le support au : dsi-id-recherche-support-cohort360@aphp.fr.'
+          } else if (practitionerPerimeters.errorType === 'back') {
+            setLoading(false)
+            return (
+              setError(true),
+              setErrorMessage(
+                'Une erreur DJANGO est survenue. Si elle persiste, veuillez contacter le support au : dsi-id-recherche-support-cohort360@aphp.fr.'
+              )
             )
-          )
+          }
+        } else if (!practitionerPerimeters || !practitionerPerimeters.length || practitionerPerimeters.length === 0) {
+          localStorage.clear()
+          setLoading(false)
+          return setNoRights(true)
         }
-      } else if (!practitionerPerimeters || !practitionerPerimeters.length || practitionerPerimeters.length === 0) {
-        localStorage.clear()
+
+        const nominativeGroupsIds = practitionerPerimeters
+          .filter((perimeterItem) => perimeterItem.read_access === 'DATA_NOMINATIVE')
+          .map((practitionerPerimeter) => practitionerPerimeter.perimeter.cohort_id)
+          .filter((item) => item)
+
+        dispatch(
+          loginAction({
+            ...practitioner,
+            nominativeGroupsIds,
+            deidentified: nominativeGroupsIds.length === 0,
+            lastConnection,
+            maintenance,
+            accessExpirations
+          })
+        )
+
+        const oldPath = localStorage.getItem('old-path')
+        localStorage.removeItem('old-path')
+        navigate(oldPath ?? '/home')
+      } else {
         setLoading(false)
-        return setNoRights(true)
+        setError(true)
       }
-
-      const nominativeGroupsIds = practitionerPerimeters
-        .filter((perimeterItem) => perimeterItem.read_access === 'DATA_NOMINATIVE')
-        .map((practitionerPerimeter) => practitionerPerimeter.perimeter.cohort_id)
-        .filter((item) => item)
-
-      dispatch(
-        loginAction({
-          ...practitioner,
-          nominativeGroupsIds,
-          deidentified: nominativeGroupsIds.length === 0,
-          lastConnection,
-          maintenance,
-          accessExpirations
-        })
-      )
-
-      const oldPath = localStorage.getItem('old-path')
-      localStorage.removeItem('old-path')
-      navigate(oldPath ?? '/home')
-    } else {
-      setLoading(false)
-      setError(true)
-    }
-  }
+    },
+    [dispatch, navigate]
+  )
 
   const setLeftDays = (accessExpirations) => {
     return accessExpirations
@@ -186,7 +178,7 @@ const Login = () => {
         return a.leftDays - b.leftDays
       })
   }
-  const login = async () => {
+  const login = useCallback(async () => {
     if (loading) return
     setLoading(true)
 
@@ -296,7 +288,7 @@ const Login = () => {
         )
       )
     }
-  }
+  }, [authCode, getPractitionerData, loading, password, username])
 
   const _onSubmit = (e) => {
     e.preventDefault()
@@ -312,6 +304,17 @@ const Login = () => {
       `response_type=${OIDC_RESPONSE_TYPE}&` + // eslint-disable-line
       `scope=${OIDC_SCOPE}` // eslint-disable-line
   }
+
+  useEffect(() => {
+    localforage.setItem('persist:root', '')
+    if (code) setAuthCode(code)
+  }, [code])
+
+  useEffect(() => {
+    if (authCode) {
+      login()
+    }
+  }, [authCode, login])
 
   if (noRights === true) return <NoRights />
 

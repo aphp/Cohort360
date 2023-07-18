@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 
 import { Alert, Checkbox, Grid, Typography } from '@mui/material'
 
@@ -68,50 +68,46 @@ const PatientDocs: React.FC<PatientDocsProps> = ({ groupId }) => {
     controllerRef.current = new AbortController()
   }
 
-  const fetchDocumentsList = async (page: number) => {
-    const selectedDocTypesCodes = filters.selectedDocTypes.map((docType) => docType.code)
-    dispatch(
-      fetchDocuments({
-        signal: controllerRef.current?.signal,
-        groupId,
-        options: {
-          page,
-          searchBy: searchBy,
-          sort: {
-            by: order.orderBy,
-            direction: order.orderDirection
-          },
-          filters: {
-            ...filters,
-            searchInput,
-            selectedDocTypes: selectedDocTypesCodes
+  const fetchDocumentsList = useCallback(
+    async (page: number) => {
+      const selectedDocTypesCodes = filters.selectedDocTypes.map((docType) => docType.code)
+      dispatch(
+        fetchDocuments({
+          signal: controllerRef.current?.signal,
+          groupId,
+          options: {
+            page,
+            searchBy: searchBy,
+            sort: {
+              by: order.orderBy,
+              direction: order.orderDirection
+            },
+            filters: {
+              ...filters,
+              searchInput,
+              selectedDocTypes: selectedDocTypesCodes
+            }
           }
-        }
-      })
-    )
+        })
+      )
 
-    setSearchMode(!!searchInput)
-  }
+      setSearchMode(!!searchInput)
+    },
+    [dispatch, groupId, filters, order, searchBy, searchInput]
+  )
 
-  const handleChangePage = (value?: number) => {
-    setPage(value || 1)
-    fetchDocumentsList(value || 1)
-  }
+  const handleChangePage = useCallback(
+    (value?: number) => {
+      setPage(value || 1)
+      fetchDocumentsList(value || 1)
+    },
+    [fetchDocumentsList]
+  )
 
   useEffect(() => {
     _cancelPendingRequest()
     handleChangePage()
-  }, [
-    debouncedSearchInput,
-    filters.onlyPdfAvailable,
-    filters.nda,
-    filters.selectedDocTypes,
-    filters.startDate,
-    filters.endDate,
-    order.orderBy,
-    order.orderDirection,
-    searchBy
-  ]) // eslint-disable-line
+  }, [debouncedSearchInput, filters.onlyPdfAvailable, filters.nda, filters.selectedDocTypes, filters.startDate, filters.endDate, order.orderBy, order.orderDirection, searchBy, handleChangePage]) // eslint-disable-line
 
   const onChangeOptions = (key: string, value: any) => {
     setFilters((prevState) => ({

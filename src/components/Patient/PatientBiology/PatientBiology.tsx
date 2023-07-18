@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { Alert, Grid, Typography } from '@mui/material'
 
@@ -23,6 +23,7 @@ type PatientBiologyTypes = {
 }
 
 const filtersDefault = { nda: '', loinc: '', anabio: '', startDate: null, endDate: null }
+const validatedStatus = true
 
 const PatientBiology: React.FC<PatientBiologyTypes> = ({ groupId }) => {
   const { classes } = useStyles()
@@ -46,41 +47,45 @@ const PatientBiology: React.FC<PatientBiologyTypes> = ({ groupId }) => {
 
   const [filters, setFilters] = useState<ObservationFilters>(filtersDefault)
 
-  const validatedStatus = true
-
   const [order, setOrder] = useState<Order>({
     orderBy: 'effectiveDatetime',
     orderDirection: 'asc'
   })
 
-  const _fetchBiology = async (page: number) => {
-    dispatch(
-      fetchBiology({
-        groupId,
-        rowStatus: validatedStatus,
-        options: {
-          page,
-          sort: {
-            by: order.orderBy,
-            direction: order.orderDirection
-          },
-          filters: {
-            searchInput,
-            nda: filters.nda,
-            loinc: filters.loinc,
-            anabio: filters.anabio,
-            startDate: filters.startDate,
-            endDate: filters.endDate
+  const _fetchBiology = useCallback(
+    async (page: number) => {
+      dispatch(
+        fetchBiology({
+          groupId,
+          rowStatus: validatedStatus,
+          options: {
+            page,
+            sort: {
+              by: order.orderBy,
+              direction: order.orderDirection
+            },
+            filters: {
+              searchInput,
+              nda: filters.nda,
+              loinc: filters.loinc,
+              anabio: filters.anabio,
+              startDate: filters.startDate,
+              endDate: filters.endDate
+            }
           }
-        }
-      })
-    )
-  }
+        })
+      )
+    },
+    [dispatch, groupId, order, searchInput, filters]
+  )
 
-  const handleChangePage = (value?: number) => {
-    setPage(value ? value : 1)
-    _fetchBiology(value ? value : 1)
-  }
+  const handleChangePage = useCallback(
+    (value?: number) => {
+      setPage(value ? value : 1)
+      _fetchBiology(value ? value : 1)
+    },
+    [_fetchBiology]
+  )
 
   const handleChangeFilter = (filterName: 'nda' | 'loinc' | 'anabio' | 'startDate' | 'endDate', value: any) => {
     switch (filterName) {
@@ -98,7 +103,7 @@ const PatientBiology: React.FC<PatientBiologyTypes> = ({ groupId }) => {
 
   useEffect(() => {
     handleChangePage()
-  }, [searchInput, filters, order, validatedStatus])
+  }, [searchInput, filters, order, handleChangePage])
 
   return (
     <Grid container justifyContent="flex-end" className={classes.documentTable}>

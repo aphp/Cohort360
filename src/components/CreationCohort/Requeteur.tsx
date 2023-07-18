@@ -55,7 +55,7 @@ const Requeteur = () => {
 
   const [requestLoading, setRequestLoading] = useState(0)
   const [criteriaLoading, setCriteriaLoading] = useState(0)
-  let _criteria = constructCriteriaList()
+  const _criteria = useRef(constructCriteriaList())
   const isRendered = useRef<boolean>(false)
 
   const _fetchRequest = useCallback(async () => {
@@ -75,7 +75,7 @@ const Requeteur = () => {
       console.error(error)
     }
     setRequestLoading((requestLoading) => requestLoading - 1)
-  }, [dispatch, requestIdFromUrl, snapshotIdFromUrl])
+  }, [dispatch, navigate, requestIdFromUrl, snapshotIdFromUrl])
 
   /**
    * Fetch all criteria to display list + retrieve all data from fetcher
@@ -85,15 +85,15 @@ const Requeteur = () => {
       setCriteriaLoading((criteriaLoading) => criteriaLoading + 1)
     }
     try {
-      _criteria.forEach((criterion) => {
+      _criteria.current.forEach((criterion) => {
         if (criterion.id === 'IPPList') {
           criterion.color = allowSearchIpp ? '#0063AF' : '#808080'
           criterion.disabled = !allowSearchIpp
         }
       })
 
-      _criteria = await getDataFromFetch(Object.freeze(_criteria), selectedCriteria, criteriaList)
-      dispatch(setCriteriaList(_criteria))
+      _criteria.current = await getDataFromFetch(Object.freeze(_criteria.current), selectedCriteria, criteriaList)
+      dispatch(setCriteriaList(_criteria.current))
     } catch (error) {
       console.error(error)
     }

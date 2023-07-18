@@ -61,6 +61,9 @@ const OccurrencesNumberInputs: React.FC<OccurrencesNumberInputsProps> = (props) 
       onChangeValue('occurrence', minValue)
       return
     }
+    // this is a dependency because the comparator can change the min value
+    // and we don't want to change the value to the previous one if it's under the minValue for this comparator
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCriteria.occurrenceComparator])
 
   return (

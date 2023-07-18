@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
   Breadcrumbs,
@@ -189,32 +189,18 @@ const ScopeTree: React.FC<ScopeTreeProps> = ({
   const isHeadIndetermined: boolean =
     !isAllSelected && selectedItems && selectedItems.length > 0 && rootRows && !isHeadChecked
 
-  const fetchScopeTree = async (executiveUnitType?: ScopeType, signal?: AbortSignal) => {
-    return dispatch(fetchScopesList({ signal, type: executiveUnitType })).unwrap()
-  }
+  const fetchScopeTree = useCallback(
+    async (executiveUnitType?: ScopeType, signal?: AbortSignal) => {
+      return dispatch(fetchScopesList({ signal, type: executiveUnitType })).unwrap()
+    },
+    [dispatch]
+  )
 
   const _cancelPendingRequest = () => {
     if (controllerRef.current) {
       controllerRef.current.abort()
     }
     controllerRef.current = new AbortController()
-  }
-
-  const _init = async () => {
-    setSearchLoading(true)
-    _cancelPendingRequest()
-
-    let newPerimetersList: ScopeTreeRow[] = []
-    const fetchScopeTreeResponse = await fetchScopeTree(executiveUnitType, controllerRef.current?.signal)
-    if (fetchScopeTreeResponse && !fetchScopeTreeResponse.aborted) {
-      newPerimetersList = fetchScopeTreeResponse.scopesList
-      setRootRows(newPerimetersList)
-      setOpenPopulations([])
-      setCount(newPerimetersList?.length)
-      setIsEmpty(!newPerimetersList || newPerimetersList.length < 0)
-    }
-    await _expandSelectedItems(newPerimetersList ?? rootRows)
-    setSearchLoading(false)
   }
 
   const getFetchedSelectedItems = (selectedItems: ScopeTreeRow[], rootRows: ScopeTreeRow[]) => {
@@ -303,6 +289,23 @@ const ScopeTree: React.FC<ScopeTreeProps> = ({
 
     _updateRootRows(newRootRows, parents)
     dispatch(updateScopeList(newRootRows))
+  }
+
+  const _init = async () => {
+    setSearchLoading(true)
+    _cancelPendingRequest()
+
+    let newPerimetersList: ScopeTreeRow[] = []
+    const fetchScopeTreeResponse = await fetchScopeTree(executiveUnitType, controllerRef.current?.signal)
+    if (fetchScopeTreeResponse && !fetchScopeTreeResponse.aborted) {
+      newPerimetersList = fetchScopeTreeResponse.scopesList
+      setRootRows(newPerimetersList)
+      setOpenPopulations([])
+      setCount(newPerimetersList?.length)
+      setIsEmpty(!newPerimetersList || newPerimetersList.length < 0)
+    }
+    await _expandSelectedItems(newPerimetersList ?? rootRows)
+    setSearchLoading(false)
   }
 
   const _searchInPerimeters = async (_isAllSelected?: boolean) => {
@@ -419,12 +422,14 @@ const ScopeTree: React.FC<ScopeTreeProps> = ({
     return () => {
       controllerRef.current?.abort()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchTerm])
 
   useEffect(() => {
     if (debouncedSearchTerm) {
       _searchInPerimeters(isAllSelected)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page])
 
   useEffect(() => {
@@ -432,13 +437,14 @@ const ScopeTree: React.FC<ScopeTreeProps> = ({
       (item) => findEquivalentRowInItemAndSubItems(item, rootRows).equivalentRow ?? item
     )
     setSelectedItem(_selectedItems)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultSelectedItems])
 
   useEffect(() => {
     if (!scopeState.aborted) {
       setRootRows(scopesList)
     }
-  }, [scopesList])
+  }, [scopeState.aborted, scopesList])
 
   const headCells = [
     { id: '', align: 'left', disablePadding: true, disableOrderBy: true, label: '' },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 
 import {
   Button,
@@ -47,11 +47,16 @@ const DataTableTopBar: React.FC<DataTableTopBarProps> = ({ loading, tabs, result
   const [search, setSearch] = useState(searchBar?.value ?? '')
   const [searchBy, setSearchBy] = useState<SearchByTypes>(SearchByTypes.text)
 
-  const onSearch = (newInput = search) => {
+  const onSearch = useCallback((newInput = search) => {
     if (searchBar && searchBar.onSearch && typeof searchBar.onSearch === 'function') {
       searchBar.onSearch(newInput, searchBy)
     }
-  }
+    // should not need to add searchBar.onSearch to the dependency array
+    // because once the first searchBar.onSearch is set it is generally never changed
+    // even if often the function is recreated in the parent component
+    // this is still a bad pattern and should be avoided
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleChangeSelect = (
     event: SelectChangeEvent<{
@@ -71,17 +76,17 @@ const DataTableTopBar: React.FC<DataTableTopBarProps> = ({ loading, tabs, result
 
   useEffect(() => {
     setSearch(searchBar?.value ?? '')
-  }, [searchBar, searchBar && searchBar?.value])
+  }, [searchBar?.value])
 
   useEffect(() => {
     onSearch(search)
-  }, [search])
+  }, [onSearch, search])
 
   useEffect(() => {
     if (search !== '') {
       onSearch(search)
     }
-  }, [searchBy])
+  }, [onSearch, search, searchBy])
 
   return (
     <>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import {
   Alert,
@@ -43,7 +43,7 @@ const BiologyForm: React.FC<BiologyFormProps> = (props) => {
   const { classes } = useStyles()
   const dispatch = useAppDispatch()
   const initialState: HierarchyTree | null = useAppSelector((state) => state.syncHierarchyTable)
-  const currentState = { ...selectedCriteria, ...initialState }
+  const currentState = useMemo(() => ({ ...selectedCriteria, ...initialState }), [selectedCriteria, initialState])
   const [multiFields, setMultiFields] = useState<string | null>(localStorage.getItem('multiple_fields'))
   const [allowSearchByValue, setAllowSearchByValue] = useState(false)
 
@@ -90,7 +90,7 @@ const BiologyForm: React.FC<BiologyFormProps> = (props) => {
         onChangeValue('isLeaf', false)
       }
     }
-  }, [currentState])
+  }, [criteria.fetch, currentState, onChangeValue])
 
   return isOpen ? (
     <Grid className={classes.root}>

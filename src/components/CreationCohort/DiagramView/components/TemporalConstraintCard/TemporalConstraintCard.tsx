@@ -42,7 +42,7 @@ const TemporalConstraint: React.FC = () => {
     } else {
       setTemporalConstraintExist(false)
     }
-  }, [])
+  }, [temporalConstraints?.length])
 
   useEffect(() => {
     if (criteriaGroup && criteriaGroup.length > 0) {
@@ -60,7 +60,7 @@ const TemporalConstraint: React.FC = () => {
         setDisableTemporalConstraint(true)
       }
     }
-  }, [])
+  }, [criteriaGroup, disableTemporalConstraint, dispatch, selectableCriteria.length, temporalConstraints])
 
   const handleOnClose = () => void setModalIsOpen(false)
 

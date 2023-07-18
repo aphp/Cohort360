@@ -78,7 +78,7 @@ const Welcome: React.FC = () => {
 
     // fetchScope
     dispatch(fetchScopesList({}))
-  }, [])
+  }, [dispatch])
 
   useEffect(() => {
     const _lastRequest =

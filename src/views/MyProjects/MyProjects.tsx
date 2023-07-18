@@ -69,29 +69,29 @@ const MyProjects: React.FC<{}> = () => {
   const loadingCohort = cohortState.loading
   const loading = loadingProject || loadingRequest || loadingCohort
 
-  const _fetchProjectsList = async () => {
+  const _fetchProjectsList = useCallback(async () => {
     dispatch(setSelectedProject(null))
     dispatch(fetchProjectsList())
-  }
+  }, [dispatch])
 
-  const _fetchRequestsList = async () => {
+  const _fetchRequestsList = useCallback(async () => {
     dispatch(setSelectedRequest(null))
     dispatch(fetchRequestsList())
-  }
+  }, [dispatch])
 
-  const _fetchCohortsList = async () => {
+  const _fetchCohortsList = useCallback(async () => {
     dispatch(fetchCohortsList({ limit: 100 }))
-  }
+  }, [dispatch])
 
-  const _fetch = async () => {
+  const _fetch = useCallback(async () => {
     await _fetchProjectsList()
     await _fetchRequestsList()
     await _fetchCohortsList()
-  }
+  }, [_fetchCohortsList, _fetchProjectsList, _fetchRequestsList])
 
   useEffect(() => {
     _fetch()
-  }, [])
+  }, [_fetch])
 
   const handleClickAddProject = () => {
     dispatch(setSelectedProject(''))

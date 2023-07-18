@@ -25,7 +25,7 @@ const Scope = () => {
 
   useEffect(() => {
     dispatch(closeAllOpenedPopulation())
-  }, [])
+  }, [dispatch])
 
   const onChangeSelectedItem = (newSelectedItems) => {
     setSelectedItem(newSelectedItems)

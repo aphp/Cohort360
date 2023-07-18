@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { Grid } from '@mui/material'
 
@@ -63,31 +63,37 @@ const PatientPMSI: React.FC<PatientPMSITypes> = ({ groupId }) => {
 
   const [open, setOpen] = useState(false)
 
-  const _fetchPMSI = async (page: number) => {
-    const selectedDiagnosticTypesCodes = filters.selectedDiagnosticTypes.map((diagnosticType) => diagnosticType.id)
-    dispatch(
-      fetchPmsi({
-        selectedTab,
-        groupId,
-        options: {
-          page,
-          sort: {
-            by: order.orderBy,
-            direction: order.orderDirection
-          },
-          filters: {
-            ...filters,
-            diagnosticTypes: selectedDiagnosticTypesCodes
+  const _fetchPMSI = useCallback(
+    async (page: number) => {
+      const selectedDiagnosticTypesCodes = filters.selectedDiagnosticTypes.map((diagnosticType) => diagnosticType.id)
+      dispatch(
+        fetchPmsi({
+          selectedTab,
+          groupId,
+          options: {
+            page,
+            sort: {
+              by: order.orderBy,
+              direction: order.orderDirection
+            },
+            filters: {
+              ...filters,
+              diagnosticTypes: selectedDiagnosticTypesCodes
+            }
           }
-        }
-      })
-    )
-  }
+        })
+      )
+    },
+    [dispatch, selectedTab, groupId, filters, order]
+  )
 
-  const handleChangePage = (value?: number) => {
-    setPage(value ? value : 1)
-    _fetchPMSI(value ? value : 1)
-  }
+  const handleChangePage = useCallback(
+    (value?: number) => {
+      setPage(value ? value : 1)
+      _fetchPMSI(value ? value : 1)
+    },
+    [_fetchPMSI]
+  )
 
   const onChangeOptions = (key: string, value: any) => {
     setFilters((prevState) => ({
@@ -117,16 +123,7 @@ const PatientPMSI: React.FC<PatientPMSITypes> = ({ groupId }) => {
 
   useEffect(() => {
     handleChangePage()
-  }, [
-    filters.searchInput,
-    filters.nda,
-    filters.code,
-    filters.startDate,
-    filters.endDate,
-    filters.selectedDiagnosticTypes,
-    order.orderBy,
-    order.orderDirection
-  ]) // eslint-disable-line
+  }, [filters.searchInput, filters.nda, filters.code, filters.startDate, filters.endDate, filters.selectedDiagnosticTypes, order.orderBy, order.orderDirection, handleChangePage]) // eslint-disable-line
 
   useEffect(() => {
     setPage(1)
