@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { ReactNode } from 'react'
 import useStyles from './styles'
 import { Alert, Button, Divider, FormLabel, Grid, IconButton, Switch, TextField, Typography } from '@mui/material'
 import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace'
@@ -6,16 +6,18 @@ import { PropsWithChildren } from 'react'
 
 type CriteriaLayoutProps = {
   isEdition: boolean
-  goBack: () => void
+  goBack: (data?: any) => void
   onSubmit: () => void
-  disabled: boolean
   criteriaLabel: string
   title: string
   onChangeTitle: (title: string) => void
   isInclusive: boolean
   onChangeIsInclusive: (isInclusive: boolean) => void
+  disabled?: boolean
   infoAlert?: string
-  warningAlert?: string
+  warningAlert?: ReactNode | string
+  errorAlert?: string
+  withTabs?: boolean
 }
 
 const CriteriaLayout: React.FC<PropsWithChildren<CriteriaLayoutProps>> = ({
@@ -30,13 +32,15 @@ const CriteriaLayout: React.FC<PropsWithChildren<CriteriaLayoutProps>> = ({
   isInclusive,
   onChangeIsInclusive,
   infoAlert,
-  warningAlert
+  warningAlert,
+  errorAlert,
+  withTabs
 }) => {
   const { classes } = useStyles()
 
   return (
     <Grid className={classes.root}>
-      <Grid className={classes.actionContainer}>
+      <Grid className={classes.actionContainer} style={{ marginBottom: withTabs ? 46 : 0 }}>
         {!isEdition ? (
           <>
             <IconButton className={classes.backButton} onClick={goBack}>
@@ -50,9 +54,10 @@ const CriteriaLayout: React.FC<PropsWithChildren<CriteriaLayoutProps>> = ({
         )}
       </Grid>
 
-      <Grid className={classes.formContainer}>
+      <Grid className={classes.formContainer} style={{ maxHeight: `calc(100vh - ${withTabs ? 180 : 135}px)` }}>
         {infoAlert && <Alert severity="info">{infoAlert}</Alert>}
         {warningAlert && <Alert severity="warning">{warningAlert}</Alert>}
+        {errorAlert && <Alert severity="error">{errorAlert}</Alert>}
 
         <Grid className={classes.inputContainer} container>
           <Typography variant="h6">Critère {criteriaLabel}</Typography>

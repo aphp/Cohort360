@@ -1,18 +1,18 @@
-import React, { useState } from 'react'
-
-import { Alert, Button, Divider, FormLabel, Grid, IconButton, Link, Switch, TextField, Typography } from '@mui/material'
-
-import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace'
-
-import useStyles from './styles'
+import React from 'react'
 import { useAppDispatch, useAppSelector } from 'state'
 import { fetchClaim } from 'state/pmsi'
-import { CriteriaItemDataCache, CriteriaName, HierarchyTree } from 'types'
-import OccurrencesNumberInputs from '../../../AdvancedInputs/OccurrencesInputs/OccurrenceNumberInputs'
+
+import { Link } from '@mui/material'
 import AdvancedInputs from '../../../AdvancedInputs/AdvancedInputs'
+import CriteriaLayout from 'components/ui/CriteriaLayout'
 import InputAutocompleteAsync from 'components/Inputs/InputAutocompleteAsync/InputAutocompleteAsync'
+import OccurrencesNumberInputs from '../../../AdvancedInputs/OccurrencesInputs/OccurrenceNumberInputs'
+
+import { CriteriaItemDataCache, CriteriaName, HierarchyTree } from 'types'
+import { GhmDataType, RessourceTypeLabels } from 'types/requestCriterias'
+
 import services from 'services/aphp'
-import { GhmDataType } from 'types/requestCriterias'
+import useStyles from './styles'
 
 type GHMFormProps = {
   isOpen: boolean
@@ -31,7 +31,6 @@ const GhmForm: React.FC<GHMFormProps> = (props) => {
   const dispatch = useAppDispatch()
   const initialState: HierarchyTree | null = useAppSelector((state) => state.syncHierarchyTable)
   const currentState = { ...selectedCriteria, ...initialState }
-  const [multiFields, setMultiFields] = useState<string | null>(localStorage.getItem('multiple_fields'))
 
   const getGhmOptions = async (searchValue: string) => await services.cohortCreation.fetchGhmData(searchValue, false)
   const _onSubmit = () => {
@@ -51,35 +50,18 @@ const GhmForm: React.FC<GHMFormProps> = (props) => {
     : []
 
   return isOpen ? (
-    <Grid className={classes.root}>
-      <Grid className={classes.actionContainer}>
-        {!isEdition ? (
-          <>
-            <IconButton className={classes.backButton} onClick={goBack}>
-              <KeyboardBackspaceIcon />
-            </IconButton>
-            <Divider className={classes.divider} orientation="vertical" flexItem />
-            <Typography className={classes.titleLabel}>Ajouter un critère de GHM</Typography>
-          </>
-        ) : (
-          <Typography className={classes.titleLabel}>Modifier un critère de GHM</Typography>
-        )}
-      </Grid>
-
-      <Grid className={classes.formContainer}>
-        {!multiFields && (
-          <Alert
-            severity="info"
-            onClose={() => {
-              localStorage.setItem('multiple_fields', 'ok')
-              setMultiFields('ok')
-            }}
-          >
-            Tous les éléments des champs multiples sont liés par une contrainte OU
-          </Alert>
-        )}
-
-        <Alert severity="warning">
+    <CriteriaLayout
+      criteriaLabel={`de ${RessourceTypeLabels.CLAIM}`}
+      title={currentState.title}
+      onChangeTitle={(value) => onChangeValue('title', value)}
+      isEdition={isEdition}
+      goBack={goBack}
+      onSubmit={_onSubmit}
+      isInclusive={!!currentState.isInclusive}
+      onChangeIsInclusive={(value) => onChangeValue('isInclusive', value)}
+      infoAlert="Tous les éléments des champs multiples sont liés par une contrainte OU"
+      warningAlert={
+        <>
           Données actuellement disponibles : PMSI ORBIS. Pour plus d'informations sur les prochaines intégrations de
           données, veuillez vous référer au tableau trimestriel de disponibilité des données disponible{' '}
           <Link
@@ -89,72 +71,32 @@ const GhmForm: React.FC<GHMFormProps> = (props) => {
           >
             ici
           </Link>
-        </Alert>
+        </>
+      }
+      withTabs
+    >
+      <OccurrencesNumberInputs
+        form={CriteriaName.Ghm}
+        selectedCriteria={selectedCriteria}
+        onChangeValue={onChangeValue}
+      />
 
-        <Grid className={classes.inputContainer} container>
-          <Typography variant="h6">GHM</Typography>
+      <InputAutocompleteAsync
+        multiple
+        label="Codes GHM"
+        variant="outlined"
+        noOptionsText="Veuillez entrer un code ou un critère GHM"
+        className={classes.inputItem}
+        autocompleteValue={defaultValuesCode}
+        autocompleteOptions={criteriaData.data.ghmData || []}
+        getAutocompleteOptions={getGhmOptions}
+        onChange={(e, value) => {
+          onChangeValue('code', value)
+        }}
+      />
 
-          <TextField
-            required
-            className={classes.inputItem}
-            id="criteria-name-required"
-            placeholder="Nom du critère"
-            variant="outlined"
-            value={currentState.title}
-            onChange={(e) => onChangeValue('title', e.target.value)}
-          />
-
-          <Grid style={{ display: 'flex' }}>
-            <FormLabel
-              onClick={() => onChangeValue('isInclusive', !currentState.isInclusive)}
-              style={{ margin: 'auto 1em' }}
-              component="legend"
-            >
-              Exclure les patients qui suivent les règles suivantes
-            </FormLabel>
-            <Switch
-              id="criteria-inclusive"
-              checked={!currentState.isInclusive}
-              onChange={(event) => onChangeValue('isInclusive', !event.target.checked)}
-              color="secondary"
-            />
-          </Grid>
-
-          <OccurrencesNumberInputs
-            form={CriteriaName.Ghm}
-            selectedCriteria={selectedCriteria}
-            onChangeValue={onChangeValue}
-          />
-
-          <InputAutocompleteAsync
-            multiple
-            label="Codes GHM"
-            variant="outlined"
-            noOptionsText="Veuillez entrer un code ou un critère GHM"
-            className={classes.inputItem}
-            autocompleteValue={defaultValuesCode}
-            autocompleteOptions={criteriaData.data.ghmData || []}
-            getAutocompleteOptions={getGhmOptions}
-            onChange={(e, value) => {
-              onChangeValue('code', value)
-            }}
-          />
-
-          <AdvancedInputs form={CriteriaName.Ghm} selectedCriteria={currentState} onChangeValue={onChangeValue} />
-        </Grid>
-
-        <Grid className={classes.criteriaActionContainer}>
-          {!isEdition && (
-            <Button onClick={goBack} variant="outlined">
-              Annuler
-            </Button>
-          )}
-          <Button onClick={_onSubmit} type="submit" form="ghm-form" variant="contained">
-            Confirmer
-          </Button>
-        </Grid>
-      </Grid>
-    </Grid>
+      <AdvancedInputs form={CriteriaName.Ghm} selectedCriteria={currentState} onChangeValue={onChangeValue} />
+    </CriteriaLayout>
   ) : (
     <></>
   )

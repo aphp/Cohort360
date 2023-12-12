@@ -1,33 +1,20 @@
-import React, { useState } from 'react'
-
-import {
-  Alert,
-  Autocomplete,
-  Button,
-  Divider,
-  FormControlLabel,
-  FormLabel,
-  Grid,
-  IconButton,
-  Radio,
-  RadioGroup,
-  Switch,
-  TextField,
-  Typography
-} from '@mui/material'
-
-import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace'
-
-import AdvancedInputs from '../../../AdvancedInputs/AdvancedInputs'
-
-import useStyles from './styles'
+import React from 'react'
 import { useAppDispatch, useAppSelector } from 'state'
 import { fetchMedication } from 'state/medication'
-import { CriteriaItemDataCache, CriteriaName, HierarchyTree } from 'types'
-import OccurrencesNumberInputs from '../../../AdvancedInputs/OccurrencesInputs/OccurrenceNumberInputs'
+
+import { Autocomplete, TextField } from '@mui/material'
+
+import AdvancedInputs from '../../../AdvancedInputs/AdvancedInputs'
+import CriteriaLayout from 'components/ui/CriteriaLayout'
 import InputAutocompleteAsync from 'components/Inputs/InputAutocompleteAsync/InputAutocompleteAsync'
+import OccurrencesNumberInputs from '../../../AdvancedInputs/OccurrencesInputs/OccurrenceNumberInputs'
+import RadioGroup from 'components/ui/RadioGroup'
+
+import { CriteriaItemDataCache, CriteriaName, HierarchyTree } from 'types'
+import { MedicationDataType, MedicationTypeLabel, RessourceType, RessourceTypeLabels } from 'types/requestCriterias'
+
 import services from 'services/aphp'
-import { MedicationDataType } from 'types/requestCriterias'
+import useStyles from './styles'
 
 type MedicationFormProps = {
   isOpen: boolean
@@ -47,7 +34,6 @@ const MedicationForm: React.FC<MedicationFormProps> = (props) => {
 
   const initialState: HierarchyTree | null = useAppSelector((state) => state.syncHierarchyTable)
   const currentState = { ...selectedCriteria, ...initialState }
-  const [multiFields, setMultiFields] = useState<string | null>(localStorage.getItem('multiple_fields'))
 
   const getMedicationOptions = async (searchValue: string) =>
     await services.cohortCreation.fetchMedicationData(searchValue, false)
@@ -99,140 +85,74 @@ const MedicationForm: React.FC<MedicationFormProps> = (props) => {
     : []
 
   return isOpen ? (
-    <Grid className={classes.root}>
-      <Grid className={classes.actionContainer}>
-        {!isEdition ? (
-          <>
-            <IconButton className={classes.backButton} onClick={goBack}>
-              <KeyboardBackspaceIcon />
-            </IconButton>
-            <Divider className={classes.divider} orientation="vertical" flexItem />
-            <Typography className={classes.titleLabel}>Ajouter un critère de médicament</Typography>
-          </>
-        ) : (
-          <Typography className={classes.titleLabel}>Modifier un critère de médicament</Typography>
-        )}
-      </Grid>
+    <CriteriaLayout
+      criteriaLabel={`de ${RessourceTypeLabels.MEDICATION.toLocaleLowerCase()}`}
+      title={currentState.title}
+      onChangeTitle={(value) => onChangeValue('title', value)}
+      isEdition={isEdition}
+      goBack={goBack}
+      onSubmit={_onSubmit}
+      isInclusive={!!currentState.isInclusive}
+      onChangeIsInclusive={(value) => onChangeValue('isInclusive', value)}
+      infoAlert="Tous les éléments des champs multiples sont liés par une contrainte OU"
+      withTabs
+    >
+      <OccurrencesNumberInputs
+        form={CriteriaName.Medication}
+        selectedCriteria={currentState}
+        onChangeValue={onChangeValue}
+      />
 
-      <Grid className={classes.formContainer}>
-        {!multiFields && (
-          <Alert
-            severity="info"
-            onClose={() => {
-              localStorage.setItem('multiple_fields', 'ok')
-              setMultiFields('ok')
-            }}
-          >
-            Tous les éléments des champs multiples sont liés par une contrainte OU
-          </Alert>
-        )}
+      <RadioGroup
+        style={{ display: 'flex', justifyContent: 'space-around', margin: '1em 1em 0' }}
+        selectedValue={currentState.type}
+        items={[
+          { id: RessourceType.MEDICATION_REQUEST, label: MedicationTypeLabel.Request },
+          { id: RessourceType.MEDICATION_ADMINISTRATION, label: MedicationTypeLabel.Administration }
+        ]}
+        onchange={(value) => onChangeValue('type', value)}
+        row
+      />
 
-        <Grid className={classes.inputContainer} container>
-          <Typography variant="h6">Médicaments</Typography>
-          <TextField
-            required
-            className={classes.inputItem}
-            id="criteria-name-required"
-            placeholder="Nom du critère"
-            variant="outlined"
-            value={currentState.title}
-            onChange={(e) => onChangeValue('title', e.target.value)}
-          />
-          <Grid style={{ display: 'flex' }}>
-            <FormLabel
-              onClick={() => onChangeValue('isInclusive', !currentState.isInclusive)}
-              style={{ margin: 'auto 1em' }}
-              component="legend"
-            >
-              Exclure les patients qui suivent les règles suivantes
-            </FormLabel>
-            <Switch
-              id="criteria-inclusive"
-              checked={!currentState.isInclusive}
-              onChange={(event) => onChangeValue('isInclusive', !event.target.checked)}
-              color="secondary"
-            />
-          </Grid>
-          <OccurrencesNumberInputs
-            form={CriteriaName.Medication}
-            selectedCriteria={currentState}
-            onChangeValue={onChangeValue}
-          />
-          <Grid style={{ display: 'flex' }}>
-            <RadioGroup
-              row
-              style={{ justifyContent: 'space-around' }}
-              className={classes.inputItem}
-              aria-label="mode"
-              name="criteria-mode-radio"
-              value={currentState.type}
-              onChange={(e, value) => onChangeValue('type', value)}
-            >
-              <FormControlLabel value="MedicationRequest" control={<Radio color="secondary" />} label="Prescription" />
-              <FormControlLabel
-                value="MedicationAdministration"
-                control={<Radio color="secondary" />}
-                label="Administration"
-              />
-            </RadioGroup>
-          </Grid>
-
-          <InputAutocompleteAsync
-            multiple
-            label="Code(s) sélectionné(s)"
-            variant="outlined"
-            noOptionsText="Veuillez entrer un code de médicament"
-            className={classes.inputItem}
-            autocompleteValue={defaultValuesCode}
-            autocompleteOptions={criteriaData.data.medicationData || []}
-            getAutocompleteOptions={getMedicationOptions}
-            onChange={(e, value) => {
-              onChangeValue('code', value)
-            }}
-          />
-          {currentState.type === 'MedicationRequest' && (
-            <Autocomplete
-              multiple
-              id="criteria-prescription-type-autocomplete"
-              className={classes.inputItem}
-              options={criteriaData?.data?.prescriptionTypes || []}
-              getOptionLabel={(option) => option.label}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-              value={selectedCriteriaPrescriptionType}
-              onChange={(e, value) => onChangeValue('prescriptionType', value)}
-              renderInput={(params) => <TextField {...params} label="Type de prescription" />}
-            />
-          )}
-          <Autocomplete
-            multiple
-            id="criteria-prescription-type-autocomplete"
-            className={classes.inputItem}
-            options={criteriaData.data.administrations || []}
-            getOptionLabel={(option) => option.label}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            value={selectedCriteriaAdministration}
-            onChange={(e, value) => onChangeValue('administration', value)}
-            renderInput={(params) => <TextField {...params} label="Voie d'administration" />}
-          />
-          <AdvancedInputs
-            form={CriteriaName.Medication}
-            selectedCriteria={currentState}
-            onChangeValue={onChangeValue}
-          />
-        </Grid>
-
-        <Grid className={classes.criteriaActionContainer}>
-          {!isEdition && (
-            <Button onClick={goBack} variant="outlined">
-              Annuler
-            </Button>
-          )}
-          <Button onClick={_onSubmit} type="submit" form="medication-form" variant="contained">
-            Confirmer
-          </Button>
-        </Grid>
-      </Grid>
-    </Grid>
+      <InputAutocompleteAsync
+        multiple
+        label="Code(s) sélectionné(s)"
+        variant="outlined"
+        noOptionsText="Veuillez entrer un code de médicament"
+        className={classes.inputItem}
+        autocompleteValue={defaultValuesCode}
+        autocompleteOptions={criteriaData.data.medicationData || []}
+        getAutocompleteOptions={getMedicationOptions}
+        onChange={(e, value) => {
+          onChangeValue('code', value)
+        }}
+      />
+      {currentState.type === 'MedicationRequest' && (
+        <Autocomplete
+          multiple
+          id="criteria-prescription-type-autocomplete"
+          className={classes.inputItem}
+          options={criteriaData?.data?.prescriptionTypes || []}
+          getOptionLabel={(option) => option.label}
+          isOptionEqualToValue={(option, value) => option.id === value.id}
+          value={selectedCriteriaPrescriptionType}
+          onChange={(e, value) => onChangeValue('prescriptionType', value)}
+          renderInput={(params) => <TextField {...params} label="Type de prescription" />}
+        />
+      )}
+      <Autocomplete
+        multiple
+        id="criteria-prescription-type-autocomplete"
+        className={classes.inputItem}
+        options={criteriaData.data.administrations || []}
+        getOptionLabel={(option) => option.label}
+        isOptionEqualToValue={(option, value) => option.id === value.id}
+        value={selectedCriteriaAdministration}
+        onChange={(e, value) => onChangeValue('administration', value)}
+        renderInput={(params) => <TextField {...params} label="Voie d'administration" />}
+      />
+      <AdvancedInputs form={CriteriaName.Medication} selectedCriteria={currentState} onChangeValue={onChangeValue} />
+    </CriteriaLayout>
   ) : (
     <></>
   )

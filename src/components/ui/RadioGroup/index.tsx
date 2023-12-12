@@ -6,11 +6,12 @@ type RadioProps<T> = {
   items: { id: T; label: string }[]
   onchange: (value: T) => void
   row?: boolean
+  style?: {}
 }
 
-const RadioGroup = <T,>({ selectedValue, items, onchange, row }: RadioProps<T>) => {
+const RadioGroup = <T,>({ selectedValue, items, onchange, row, style }: RadioProps<T>) => {
   return (
-    <RadioGroupMui value={selectedValue} onChange={(event, value) => onchange(value as T)} row={row}>
+    <RadioGroupMui style={style} value={selectedValue} onChange={(event, value) => onchange(value as T)} row={row}>
       {items.map((item) => (
         <FormControlLabel
           key={item.id as string}

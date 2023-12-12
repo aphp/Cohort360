@@ -1,32 +1,21 @@
-import React, { useState } from 'react'
-
-import {
-  Alert,
-  Button,
-  Divider,
-  FormLabel,
-  Grid,
-  IconButton,
-  Switch,
-  TextField,
-  Typography,
-  Radio,
-  RadioGroup,
-  FormControlLabel
-} from '@mui/material'
-
-import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace'
-
-import AdvancedInputs from 'components/CreationCohort/DiagramView/components/LogicalOperator/components/CriteriaRightPanel/AdvancedInputs/AdvancedInputs'
-
-import useStyles from './styles'
+import React from 'react'
 import { useAppDispatch, useAppSelector } from 'state'
 import { fetchProcedure } from 'state/pmsi'
-import { CriteriaItemDataCache, CriteriaName, HierarchyTree } from 'types'
-import OccurrencesNumberInputs from '../../../AdvancedInputs/OccurrencesInputs/OccurrenceNumberInputs'
+
+import { Alert } from '@mui/material'
+
+import AdvancedInputs from 'components/CreationCohort/DiagramView/components/LogicalOperator/components/CriteriaRightPanel/AdvancedInputs/AdvancedInputs'
+import { BlockWrapper } from 'components/ui/Layout'
+import CriteriaLayout from 'components/ui/CriteriaLayout'
 import InputAutocompleteAsync from 'components/Inputs/InputAutocompleteAsync/InputAutocompleteAsync'
+import RadioGroup from 'components/ui/RadioGroup'
+import OccurrencesNumberInputs from '../../../AdvancedInputs/OccurrencesInputs/OccurrenceNumberInputs'
+
+import { CriteriaItemDataCache, CriteriaName, HierarchyTree } from 'types'
+import { CcamDataType, RessourceTypeLabels } from 'types/requestCriterias'
+
 import services from 'services/aphp'
-import { CcamDataType } from 'types/requestCriterias'
+import useStyles from './styles'
 
 type CcamFormProps = {
   isOpen: boolean
@@ -45,7 +34,6 @@ const CcamForm: React.FC<CcamFormProps> = (props) => {
   const dispatch = useAppDispatch()
   const initialState: HierarchyTree | null = useAppSelector((state) => state.syncHierarchyTable)
   const currentState = { ...selectedCriteria, ...initialState }
-  const [multiFields, setMultiFields] = useState<string | null>(localStorage.getItem('multiple_fields'))
 
   const _onSubmit = () => {
     onChangeSelectedCriteria(currentState)
@@ -71,118 +59,56 @@ const CcamForm: React.FC<CcamFormProps> = (props) => {
     : []
 
   return isOpen ? (
-    <Grid className={classes.root}>
-      <Grid className={classes.actionContainer}>
-        {!isEdition ? (
-          <>
-            <IconButton className={classes.backButton} onClick={goBack}>
-              <KeyboardBackspaceIcon />
-            </IconButton>
-            <Divider className={classes.divider} orientation="vertical" flexItem />
-            <Typography className={classes.titleLabel}>Ajouter un critère d'acte CCAM</Typography>
-          </>
-        ) : (
-          <Typography className={classes.titleLabel}>Modifier un critère d'acte CCAM</Typography>
-        )}
-      </Grid>
+    <CriteriaLayout
+      criteriaLabel={`d'${RessourceTypeLabels.PROCEDURE}`}
+      title={currentState.title}
+      onChangeTitle={(value) => onChangeValue('title', value)}
+      isEdition={isEdition}
+      goBack={goBack}
+      onSubmit={_onSubmit}
+      isInclusive={!!currentState.isInclusive}
+      onChangeIsInclusive={(value) => onChangeValue('isInclusive', value)}
+      infoAlert="Tous les éléments des champs multiples sont liés par une contrainte OU"
+      withTabs
+    >
+      <OccurrencesNumberInputs
+        form={CriteriaName.Ccam}
+        selectedCriteria={selectedCriteria}
+        onChangeValue={onChangeValue}
+      />
 
-      <Grid className={classes.formContainer}>
-        {!multiFields && (
-          <Alert
-            severity="info"
-            onClose={() => {
-              localStorage.setItem('multiple_fields', 'ok')
-              setMultiFields('ok')
-            }}
-          >
-            Tous les éléments des champs multiples sont liés par une contrainte OU
-          </Alert>
-        )}
+      <RadioGroup
+        style={{ display: 'flex', justifyContent: 'space-around', margin: '1em 1em 0' }}
+        selectedValue={currentState.type}
+        items={[
+          { id: 'AREM', label: 'AREM' },
+          { id: 'ORBIS', label: 'ORBIS' }
+        ]}
+        onchange={(value) => onChangeValue('source', value)}
+        row
+      />
 
-        <Grid className={classes.inputContainer} container>
-          <Typography variant="h6">Actes CCAM</Typography>
+      <BlockWrapper className={classes.inputItem}>
+        <Alert severity="info">
+          Les données PMSI d'ORBIS sont codées au quotidien par les médecins. Les données PMSI AREM sont validées,
+          remontées aux tutelles et disponibles dans le SNDS.
+        </Alert>
+      </BlockWrapper>
 
-          <TextField
-            required
-            className={classes.inputItem}
-            id="criteria-name-required"
-            placeholder="Nom du critère"
-            variant="outlined"
-            value={currentState.title}
-            onChange={(e) => onChangeValue('title', e.target.value)}
-          />
+      <InputAutocompleteAsync
+        multiple
+        label="Codes d'actes CCAM"
+        variant="outlined"
+        noOptionsText="Veuillez entrer un code ou un acte CCAM"
+        className={classes.inputItem}
+        autocompleteValue={defaultValuesCode}
+        autocompleteOptions={criteriaData.data.ccamData || []}
+        getAutocompleteOptions={getCCAMOptions}
+        onChange={(e, value) => onChangeValue('code', value)}
+      />
 
-          <Grid style={{ display: 'flex' }}>
-            <FormLabel
-              onClick={() => onChangeValue('isInclusive', !currentState.isInclusive)}
-              style={{ margin: 'auto 1em' }}
-              component="legend"
-            >
-              Exclure les patients qui suivent les règles suivantes
-            </FormLabel>
-            <Switch
-              id="criteria-inclusive"
-              checked={!currentState.isInclusive}
-              onChange={(event) => onChangeValue('isInclusive', !event.target.checked)}
-              color="secondary"
-            />
-          </Grid>
-
-          <OccurrencesNumberInputs
-            form={CriteriaName.Ccam}
-            selectedCriteria={selectedCriteria}
-            onChangeValue={onChangeValue}
-          />
-
-          <Grid style={{ display: 'flex' }}>
-            <RadioGroup
-              row
-              style={{ justifyContent: 'space-around' }}
-              className={classes.inputItem}
-              aria-label="mode"
-              name="criteria-mode-radio"
-              value={currentState.source}
-              onChange={(e, value) => onChangeValue('source', value)}
-            >
-              <FormControlLabel value="AREM" control={<Radio color="secondary" />} label="AREM" />
-              <FormControlLabel value="ORBIS" control={<Radio color="secondary" />} label="ORBIS" />
-            </RadioGroup>
-          </Grid>
-
-          <Grid>
-            <Alert severity="info">
-              Les données PMSI d'ORBIS sont codées au quotidien par les médecins. Les données PMSI AREM sont validées,
-              remontées aux tutelles et disponibles dans le SNDS.
-            </Alert>
-          </Grid>
-
-          <InputAutocompleteAsync
-            multiple
-            label="Codes d'actes CCAM"
-            variant="outlined"
-            noOptionsText="Veuillez entrer un code ou un acte CCAM"
-            className={classes.inputItem}
-            autocompleteValue={defaultValuesCode}
-            autocompleteOptions={criteriaData.data.ccamData || []}
-            getAutocompleteOptions={getCCAMOptions}
-            onChange={(e, value) => onChangeValue('code', value)}
-          />
-
-          <AdvancedInputs form={CriteriaName.Ccam} selectedCriteria={currentState} onChangeValue={onChangeValue} />
-        </Grid>
-
-        <Grid className={classes.criteriaActionContainer}>
-          {!isEdition && (
-            <Button onClick={goBack} variant="outlined">
-              Annuler
-            </Button>
-          )}
-          <Button onClick={_onSubmit} type="submit" form="ccam-form" color="primary" variant="contained">
-            Confirmer
-          </Button>
-        </Grid>
-      </Grid>
-    </Grid>
+      <AdvancedInputs form={CriteriaName.Ccam} selectedCriteria={currentState} onChangeValue={onChangeValue} />
+    </CriteriaLayout>
   ) : (
     <></>
   )

@@ -11,11 +11,11 @@ import ModalAdministrationComment from 'components/Patient/PatientMedication/Mod
 import displayDigit from 'utils/displayDigit'
 
 import { Column, CohortMedication } from 'types'
+import { Order, OrderBy } from 'types/searchCriterias'
 
 import useStyles from './styles'
 import { MedicationAdministration, MedicationRequest } from 'fhir/r4'
 import { MEDICATION_ATC, MEDICATION_ATC_ORBIS, MEDICATION_UCD } from '../../constants'
-import { OrderBy } from 'types/searchCriterias'
 
 type DataTableMedicationProps = {
   loading: boolean
@@ -42,15 +42,15 @@ const DataTableMedication: React.FC<DataTableMedicationProps> = ({
   const { classes } = useStyles()
 
   const columns = [
-    { label: `NDA${deidentified ? ' chiffré' : ''}`, code: 'encounter' },
+    { label: `NDA${deidentified ? ' chiffré' : ''}`, code: Order.ENCOUNTER },
     {
       label: selectedTab === 'prescription' ? 'Date de prescription' : "Date d'administration",
-      code: 'Period-start'
+      code: Order.PERIOD_START
     },
-    { label: 'Code ATC', code: 'medication-atc' },
-    { label: 'Code UCD', code: 'medication-ucd' },
-    selectedTab === 'prescription' ? { label: 'Type de prescription', code: 'category-name' } : null,
-    { label: "Voie d'administration", code: 'route' },
+    { label: 'Code ATC', code: Order.MEDICATION_ATC },
+    { label: 'Code UCD', code: Order.MEDICATION_UCD },
+    selectedTab === 'prescription' ? { label: 'Type de prescription', code: Order.PRESCRIPTION_TYPES } : null,
+    { label: "Voie d'administration", code: Order.ROUTE },
     selectedTab === 'administration' ? { label: 'Quantité' } : null,
     { label: 'Unité exécutrice' },
     selectedTab === 'administration' ? { label: 'Commentaire' } : null

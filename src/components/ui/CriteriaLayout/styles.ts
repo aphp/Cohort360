@@ -18,8 +18,7 @@ const useStyles = makeStyles()(() => ({
   divider: { background: 'white' },
   titleLabel: { marginLeft: '1em' },
   formContainer: {
-    overflow: 'auto',
-    maxHeight: 'calc(100vh - 135px)'
+    overflow: 'auto'
   },
   inputContainer: {
     padding: '1em',

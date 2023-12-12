@@ -1,28 +1,16 @@
 import React, { useState } from 'react'
 
-import {
-  Alert,
-  Autocomplete,
-  Button,
-  Divider,
-  FormLabel,
-  Grid,
-  IconButton,
-  Typography,
-  TextField,
-  Switch
-} from '@mui/material'
-
-import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace'
+import { Autocomplete, TextField } from '@mui/material'
 
 import useStyles from './styles'
 
 import { DurationRangeType, LabelObject, VitalStatusLabel } from 'types/searchCriterias'
 import CalendarRange from 'components/ui/Inputs/CalendarRange'
 import DurationRange from 'components/ui/Inputs/DurationRange'
-import { CriteriaDataKey, DemographicDataType, RessourceType } from 'types/requestCriterias'
+import { CriteriaDataKey, DemographicDataType, RessourceType, RessourceTypeLabels } from 'types/requestCriterias'
 import { BlockWrapper } from 'components/ui/Layout'
 import { CriteriaDrawerComponentProps, CriteriaItemDataCache } from 'types'
+import CriteriaLayout from 'components/ui/CriteriaLayout'
 
 enum Error {
   INCOHERENT_AGE_ERROR,
@@ -56,7 +44,6 @@ const DemographicForm = (props: CriteriaDrawerComponentProps) => {
   const { classes } = useStyles()
 
   const [error, setError] = useState(Error.NO_ERROR)
-  const [multiFields, setMultiFields] = useState<string | null>(localStorage.getItem('multiple_fields'))
   const isEdition = selectedCriteria !== null ? true : false
 
   const onSubmit = () => {
@@ -74,145 +61,86 @@ const DemographicForm = (props: CriteriaDrawerComponentProps) => {
   }
 
   return (
-    <Grid className={classes.root}>
-      <Grid className={classes.actionContainer}>
-        {!isEdition ? (
-          <>
-            <IconButton className={classes.backButton} onClick={goBack}>
-              <KeyboardBackspaceIcon />
-            </IconButton>
-            <Divider className={classes.divider} orientation="vertical" flexItem />
-            <Typography className={classes.titleLabel}>Ajouter un critère démographique</Typography>
-          </>
-        ) : (
-          <Typography className={classes.titleLabel}>Modifier un critère démographique</Typography>
-        )}
-      </Grid>
+    <CriteriaLayout
+      criteriaLabel={`de ${RessourceTypeLabels.PATIENT.toLocaleLowerCase()}`}
+      title={title}
+      onChangeTitle={setTitle}
+      isEdition={isEdition}
+      goBack={goBack}
+      onSubmit={onSubmit}
+      disabled={error === Error.INCOHERENT_AGE_ERROR}
+      isInclusive={isInclusive}
+      onChangeIsInclusive={setIsInclusive}
+      infoAlert={'Tous les éléments des champs multiples sont liés par une contrainte OU'}
+    >
+      <Autocomplete
+        multiple
+        id="criteria-gender-autocomplete"
+        className={classes.inputItem}
+        options={criteriaData.data.gender || []}
+        getOptionLabel={(option) => option.label}
+        isOptionEqualToValue={(option, value) => option.id === value.id}
+        value={genders}
+        onChange={(e, value) => setGenders(value)}
+        renderInput={(params) => <TextField {...params} label="Genre" />}
+      />
 
-      <Grid className={classes.formContainer}>
-        {!multiFields && (
-          <Alert
-            severity="info"
-            onClose={() => {
-              localStorage.setItem('multiple_fields', 'ok')
-              setMultiFields('ok')
-            }}
-          >
-            Tous les éléments des champs multiples sont liés par une contrainte OU
-          </Alert>
-        )}
+      <Autocomplete
+        multiple
+        id="criteria-vitalStatus-autocomplete"
+        className={classes.inputItem}
+        options={criteriaData.data.status}
+        getOptionLabel={(option) => option.label}
+        isOptionEqualToValue={(option, value) => option.id === value.id}
+        value={vitalStatus}
+        onChange={(e, value) => {
+          setVitalStatus(value)
+          if (value.length === 1 && value[0].label === VitalStatusLabel.ALIVE) setDeathDates([null, null])
+        }}
+        renderInput={(params) => <TextField {...params} label="Statut vital" />}
+      />
 
-        <Grid className={classes.inputContainer} container>
-          <Typography variant="h6">Démographie patient</Typography>
+      <BlockWrapper margin="1em">
+        <CalendarRange
+          inline
+          disabled={age[0] !== null || age[1] !== null}
+          value={birthdates}
+          label={'Date de naissance'}
+          onChange={(value) => setBirthdates(value)}
+          onError={(isError) => setError(isError ? Error.INCOHERENT_AGE_ERROR : Error.NO_ERROR)}
+        />
+      </BlockWrapper>
 
-          <TextField
-            required
-            className={classes.inputItem}
-            id="criteria-name-required"
-            placeholder="Nom du critère"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-
-          <Grid style={{ display: 'flex' }}>
-            <FormLabel style={{ margin: 'auto 1em' }} component="legend">
-              Exclure les patients qui suivent les règles suivantes
-            </FormLabel>
-            <Switch
-              id="criteria-inclusive"
-              checked={!isInclusive}
-              onChange={(event) => setIsInclusive(!event.target.checked as boolean)}
-              color="secondary"
-            />
-          </Grid>
-
-          <Autocomplete
-            multiple
-            id="criteria-gender-autocomplete"
-            className={classes.inputItem}
-            options={criteriaData.data.gender || []}
-            getOptionLabel={(option) => option.label}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            value={genders}
-            onChange={(e, value) => setGenders(value)}
-            renderInput={(params) => <TextField {...params} label="Genre" />}
-          />
-
-          <Autocomplete
-            multiple
-            id="criteria-vitalStatus-autocomplete"
-            className={classes.inputItem}
-            options={criteriaData.data.status}
-            getOptionLabel={(option) => option.label}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            value={vitalStatus}
-            onChange={(e, value) => {
-              setVitalStatus(value)
-              if (value.length === 1 && value[0].label === VitalStatusLabel.ALIVE) setDeathDates([null, null])
-            }}
-            renderInput={(params) => <TextField {...params} label="Statut vital" />}
-          />
-
-          <BlockWrapper margin="1em">
-            <CalendarRange
-              inline
-              disabled={age[0] !== null || age[1] !== null}
-              value={birthdates}
-              label={'Date de naissance'}
-              onChange={(value) => setBirthdates(value)}
-              onError={(isError) => setError(isError ? Error.INCOHERENT_AGE_ERROR : Error.NO_ERROR)}
-            />
-          </BlockWrapper>
-
-          <BlockWrapper margin="1em">
-            <DurationRange
-              value={age}
-              disabled={birthdates[0] !== null || birthdates[1] !== null}
-              label={
-                vitalStatus &&
-                vitalStatus.length === 1 &&
-                vitalStatus.find((status: LabelObject) => status.label === VitalStatusLabel.DECEASED)
-                  ? 'Âge au décès'
-                  : 'Âge actuel'
-              }
-              onChange={(value) => setAge(value)}
-              onError={(isError) => setError(isError ? Error.INCOHERENT_AGE_ERROR : Error.NO_ERROR)}
-            />
-          </BlockWrapper>
-          {vitalStatus &&
+      <BlockWrapper margin="1em">
+        <DurationRange
+          value={age}
+          disabled={birthdates[0] !== null || birthdates[1] !== null}
+          label={
+            vitalStatus &&
+            vitalStatus.length === 1 &&
+            vitalStatus.find((status: LabelObject) => status.label === VitalStatusLabel.DECEASED)
+              ? 'Âge au décès'
+              : 'Âge actuel'
+          }
+          onChange={(value) => setAge(value)}
+          onError={(isError) => setError(isError ? Error.INCOHERENT_AGE_ERROR : Error.NO_ERROR)}
+        />
+      </BlockWrapper>
+      {vitalStatus &&
             (vitalStatus.length === 0 ||
               (vitalStatus.length === 1 &&
                 vitalStatus.find((status: LabelObject) => status.label === VitalStatusLabel.DECEASED))) && (
-              <BlockWrapper margin="1em">
-                <CalendarRange
-                  inline
-                  value={deathDates}
-                  label={'Date de décès'}
-                  onChange={(value) => setDeathDates(value)}
-                  onError={(isError) => setError(isError ? Error.INCOHERENT_AGE_ERROR : Error.NO_ERROR)}
-                />
-              </BlockWrapper>
-            )}
-        </Grid>
-
-        <Grid className={classes.criteriaActionContainer}>
-          {!isEdition && (
-            <Button onClick={goBack} variant="outlined">
-              Annuler
-            </Button>
-          )}
-          <Button
-            onClick={onSubmit}
-            type="submit"
-            form="demographic-form"
-            variant="contained"
-            disabled={error === Error.INCOHERENT_AGE_ERROR}
-          >
-            Confirmer
-          </Button>
-        </Grid>
-      </Grid>
-    </Grid>
+          <BlockWrapper margin="1em">
+            <CalendarRange
+              inline
+              value={deathDates}
+              label={'Date de décès'}
+              onChange={(value) => setDeathDates(value)}
+              onError={(isError) => setError(isError ? Error.INCOHERENT_AGE_ERROR : Error.NO_ERROR)}
+            />
+          </BlockWrapper>
+        )}
+    </CriteriaLayout>
   )
 }
 

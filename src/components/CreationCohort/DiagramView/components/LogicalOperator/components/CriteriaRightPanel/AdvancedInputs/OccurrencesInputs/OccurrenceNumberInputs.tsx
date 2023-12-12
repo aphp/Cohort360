@@ -1,18 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { FormLabel, Grid, MenuItem, Select, TextField, Tooltip } from '@mui/material'
+import { Grid, MenuItem, Select, TextField, Tooltip } from '@mui/material'
 import InfoIcon from '@mui/icons-material/Info'
+import { FormLabelWrapper } from 'components/ui/Form'
 
 import { CriteriaName, CriteriaNameType } from 'types'
+import { Comparators } from 'types/requestCriterias'
 
 const defaultOccurrencesNumberInputs = {
   code: [],
   isLeaf: false,
   valueMin: 1,
   valueMax: 99999,
-  valueComparator: '>=',
+  valueComparator: Comparators.GREATER_OR_EQUAL,
   occurrence: 1,
-  occurrenceComparator: '>=',
+  occurrenceComparator: Comparators.GREATER_OR_EQUAL,
   startOccurrence: '',
   endOccurrence: '',
   isInclusive: true
@@ -64,7 +66,7 @@ const OccurrencesNumberInputs: React.FC<OccurrencesNumberInputsProps> = (props) 
 
   return (
     <>
-      <FormLabel style={{ padding: '0 1em 8px', display: 'flex', alignItems: 'center' }} component="legend">
+      <FormLabelWrapper style={{ padding: '0 1em 8px', display: 'flex', alignItems: 'center' }}>
         Nombre d'occurrences
         {(form == CriteriaName.Ccam ||
           form === CriteriaName.Cim10 ||
@@ -88,7 +90,7 @@ const OccurrencesNumberInputs: React.FC<OccurrencesNumberInputsProps> = (props) 
             <InfoIcon fontSize="small" color="primary" style={{ marginLeft: 4 }} />
           </Tooltip>
         )}
-      </FormLabel>
+      </FormLabelWrapper>
 
       <Grid style={{ display: 'grid', gridTemplateColumns: '100px 1fr', alignItems: 'start', margin: '0 1em' }}>
         <Select
@@ -97,11 +99,11 @@ const OccurrencesNumberInputs: React.FC<OccurrencesNumberInputsProps> = (props) 
           value={selectedCriteria.occurrenceComparator}
           onChange={(event) => onChangeValue('occurrenceComparator', event.target.value as string)}
         >
-          <MenuItem value={'<='}>{'<='}</MenuItem>
-          <MenuItem value={'<'}>{'<'}</MenuItem>
-          <MenuItem value={'='}>{'='}</MenuItem>
-          <MenuItem value={'>'}>{'>'}</MenuItem>
-          <MenuItem value={'>='}>{'>='}</MenuItem>
+          <MenuItem value={Comparators.LESS_OR_EQUAL}>{Comparators.LESS_OR_EQUAL}</MenuItem>
+          <MenuItem value={Comparators.LESS}>{Comparators.LESS}</MenuItem>
+          <MenuItem value={Comparators.EQUAL}>{Comparators.EQUAL}</MenuItem>
+          <MenuItem value={Comparators.GREATER}>{Comparators.GREATER}</MenuItem>
+          <MenuItem value={Comparators.GREATER_OR_EQUAL}>{Comparators.GREATER_OR_EQUAL}</MenuItem>
         </Select>
 
         <TextField

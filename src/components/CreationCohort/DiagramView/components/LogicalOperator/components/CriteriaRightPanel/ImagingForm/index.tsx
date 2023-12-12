@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Autocomplete, FormLabel, Grid, MenuItem, Select, TextField } from '@mui/material'
+import { Autocomplete, Grid, MenuItem, Select, TextField } from '@mui/material'
 import { BlockWrapper } from 'components/ui/Layout'
 import CalendarRange from 'components/ui/Inputs/CalendarRange'
 import Collapse from 'components/ui/Collapse'
@@ -19,10 +19,11 @@ import {
   RessourceTypeLabels
 } from 'types/requestCriterias'
 import { DocumentAttachmentMethod, DocumentAttachmentMethodLabel, LabelObject } from 'types/searchCriterias'
-import useStyles from './styles'
 import { mappingCriteria } from '../DemographicForm'
 import SearchbarWithCheck from 'components/ui/Inputs/SearchbarWithCheck'
 import UidTextfield from 'components/ui/Inputs/UidTextfield'
+import OccurrencesNumberInputs from '../AdvancedInputs/OccurrencesInputs/OccurrenceNumberInputs'
+import { FormLabelWrapper } from 'components/ui/Form'
 
 enum Error {
   INCOHERENT_AGE_ERROR,
@@ -47,7 +48,6 @@ export const withDocumentOptions = [
 ]
 
 const ImagingForm: React.FC<CriteriaDrawerComponentProps> = (props) => {
-  const { classes } = useStyles()
   const { criteriaData, onChangeSelectedCriteria, goBack } = props
   const selectedCriteria = props.selectedCriteria as ImagingDataType
   const isEdition = selectedCriteria !== null ? true : false
@@ -112,6 +112,12 @@ const ImagingForm: React.FC<CriteriaDrawerComponentProps> = (props) => {
       case 'endOccurrence':
         setEndOccurence(value)
         break
+      case 'occurrenceComparator':
+        setOccurrenceComparator(value)
+        break
+      case 'occurrence':
+        setOccurrence(value)
+        break
       default:
         break
     }
@@ -163,7 +169,7 @@ const ImagingForm: React.FC<CriteriaDrawerComponentProps> = (props) => {
 
   return (
     <CriteriaLayout
-      criteriaLabel={`d'${RessourceTypeLabels.IMAGING}`}
+      criteriaLabel={`d'${RessourceTypeLabels.IMAGING.toLocaleLowerCase()}`}
       title={title}
       onChangeTitle={setTitle}
       isEdition={isEdition}
@@ -173,31 +179,18 @@ const ImagingForm: React.FC<CriteriaDrawerComponentProps> = (props) => {
       isInclusive={isInclusive}
       onChangeIsInclusive={setIsInclusive}
       infoAlert="Tous les éléments des champs multiples sont liés par une contrainte OU"
-      warningAlert="Le flux alimentant les métadonnées associées aux séries et aux examens est suspendu depuis le 01/02/2023 en raison du déploiement du nouveaux PACS. Pendant cette période, il ne sera pas possible d'aligner les patients avec les examens d'imagerie réalisés après cette date. Reprise du flux estimé courant janvier 2024."
+      warningAlert="Le flux alimentant les métadonnées associées aux séries et aux examens est suspendu depuis le 01/02/2023 en raison du déploiement du nouveau PACS. Pendant cette période, il ne sera pas possible d'aligner les patients avec les examens d'imagerie réalisés après cette date. Reprise du flux estimé courant janvier 2024."
     >
-      <BlockWrapper margin="1em">
-        <FormLabel component="legend" className={classes.durationLegend}>
-          <BlockWrapper container justifyItems="center">
-            Nombre d'occurrences
-          </BlockWrapper>
-        </FormLabel>
-        <OccurenceInput
-          value={occurrence}
-          comparator={occurrenceComparator}
-          onchange={(newOccurence, newComparator) => {
-            setOccurrence(newOccurence)
-            setOccurrenceComparator(newComparator)
-          }}
-        />
-      </BlockWrapper>
-
+      <OccurrencesNumberInputs
+        form={CriteriaName.Imaging}
+        selectedCriteria={{ occurrenceComparator: occurrenceComparator, occurrence: occurrence }}
+        onChangeValue={_onChangeValue}
+      />
       {/* critères de study : */}
       <BlockWrapper margin="1em">
         <Collapse title="Critères liés à une étude" margin="0">
           <BlockWrapper style={{ margin: '0 2em 1em 0' }}>
-            <FormLabel component="legend" className={classes.durationLegend} style={{ padding: 0 }}>
-              Date de l'étude
-            </FormLabel>
+            <FormLabelWrapper style={{ padding: 0 }}>Date de l'étude</FormLabelWrapper>
             <CalendarRange
               inline
               value={[studyStartDate, studyEndDate]}
@@ -239,9 +232,7 @@ const ImagingForm: React.FC<CriteriaDrawerComponentProps> = (props) => {
           </BlockWrapper>
 
           <BlockWrapper style={{ marginBottom: '1em' }}>
-            <FormLabel component="legend" className={classes.durationLegend}>
-              Nombre de séries
-            </FormLabel>
+            <FormLabelWrapper>Nombre de séries</FormLabelWrapper>
             <OccurenceInput
               value={numberOfSeries}
               comparator={seriesComparator}
@@ -253,9 +244,7 @@ const ImagingForm: React.FC<CriteriaDrawerComponentProps> = (props) => {
           </BlockWrapper>
 
           <BlockWrapper style={{ marginBottom: '1em' }}>
-            <FormLabel component="legend" className={classes.durationLegend}>
-              Nombre d'instances
-            </FormLabel>
+            <FormLabelWrapper>Nombre d'instances</FormLabelWrapper>
             <OccurenceInput
               value={numberOfIns}
               comparator={instancesComparator}
@@ -267,9 +256,7 @@ const ImagingForm: React.FC<CriteriaDrawerComponentProps> = (props) => {
           </BlockWrapper>
 
           <BlockWrapper style={{ marginBottom: '1em' }}>
-            <FormLabel component="legend" className={classes.durationLegend}>
-              Méthode de rattachement à un document
-            </FormLabel>
+            <FormLabelWrapper>Méthode de rattachement à un document</FormLabelWrapper>
             <Grid container alignItems="center">
               <Grid item xs={withDocument === DocumentAttachmentMethod.INFERENCE_TEMPOREL ? 6 : 12}>
                 <Select
@@ -314,9 +301,7 @@ const ImagingForm: React.FC<CriteriaDrawerComponentProps> = (props) => {
             </Grid>
           </BlockWrapper>
 
-          <FormLabel component="legend" className={classes.durationLegend}>
-            Recherche par uid d'étude
-          </FormLabel>
+          <FormLabelWrapper>Recherche par uid d'étude</FormLabelWrapper>
           <UidTextfield
             value={studyUid}
             onChange={setStudyUid}
@@ -328,9 +313,7 @@ const ImagingForm: React.FC<CriteriaDrawerComponentProps> = (props) => {
         <BlockWrapper style={{ marginTop: 26 }}>
           <Collapse title="Critères liés à une série" value={isSeriesUsed} margin="0">
             <BlockWrapper style={{ margin: '0 2em 1em 0' }}>
-              <FormLabel component="legend" className={classes.durationLegend} style={{ padding: 0 }}>
-                Date de la série
-              </FormLabel>
+              <FormLabelWrapper style={{ padding: 0 }}>Date de la série</FormLabelWrapper>
               <CalendarRange
                 inline
                 value={[seriesStartDate, seriesEndDate]}
@@ -380,9 +363,7 @@ const ImagingForm: React.FC<CriteriaDrawerComponentProps> = (props) => {
               />
             </BlockWrapper>
 
-            <FormLabel component="legend" className={classes.durationLegend}>
-              Recherche par uid de série
-            </FormLabel>
+            <FormLabelWrapper>Recherche par uid de série</FormLabelWrapper>
             <UidTextfield
               value={seriesUid}
               onChange={setSeriesUid}

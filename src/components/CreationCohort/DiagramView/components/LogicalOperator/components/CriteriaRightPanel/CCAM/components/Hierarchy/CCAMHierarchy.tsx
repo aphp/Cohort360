@@ -205,10 +205,10 @@ const ProcedureHierarchy: React.FC<ProcedureHierarchyProps> = (props) => {
                 <KeyboardBackspaceIcon />
               </IconButton>
               <Divider className={classes.divider} orientation="vertical" flexItem />
-              <Typography className={classes.titleLabel}>Ajouter un critère d'acte CCAM</Typography>
+              <Typography className={classes.titleLabel}>Ajouter un critère d'actes CCAM</Typography>
             </>
           ) : (
-            <Typography className={classes.titleLabel}>Modifier un critère d'acte CCAM</Typography>
+            <Typography className={classes.titleLabel}>Modifier un critère d'actes CCAM</Typography>
           )}
         </Grid>
         <div className={classes.loader}>{loading && <LinearProgress />}</div>

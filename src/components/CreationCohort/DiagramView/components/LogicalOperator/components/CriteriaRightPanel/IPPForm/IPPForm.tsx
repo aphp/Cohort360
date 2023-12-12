@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react'
 
-import { Alert, Button, Divider, FormLabel, Grid, IconButton, Switch, Typography, TextField } from '@mui/material'
-
-import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace'
+import { Grid, Typography, TextField } from '@mui/material'
+import CriteriaLayout from 'components/ui/CriteriaLayout'
 
 import { CriteriaDrawerComponentProps } from 'types'
+import { IPPListDataType, RessourceType, RessourceTypeLabels } from 'types/requestCriterias'
 
 import useStyles from './styles'
-import { IPPListDataType, RessourceType } from 'types/requestCriterias'
 
 const defaultIPPList: Omit<IPPListDataType, 'id'> = {
   title: "Liste d'IPP",
@@ -63,82 +62,35 @@ const IPPForm: React.FC<CriteriaDrawerComponentProps> = (props) => {
   }, [defaultValues.search])
 
   return (
-    <Grid className={classes.root}>
-      <Grid className={classes.actionContainer}>
-        {!isEdition ? (
-          <>
-            <IconButton className={classes.backButton} onClick={goBack}>
-              <KeyboardBackspaceIcon />
-            </IconButton>
-            <Divider className={classes.divider} orientation="vertical" flexItem />
-            <Typography className={classes.titleLabel}>Ajouter un critère de liste d'IPP</Typography>
-          </>
-        ) : (
-          <Typography className={classes.titleLabel}>Modifier un critère de liste d'IPP</Typography>
-        )}
+    <CriteriaLayout
+      criteriaLabel={`de ${RessourceTypeLabels.IPP_LIST}`}
+      title={defaultValues.title}
+      onChangeTitle={(value) => _onChangeValue('title', value)}
+      isEdition={isEdition}
+      goBack={goBack}
+      onSubmit={_onSubmit}
+      disabled={error}
+      isInclusive={!!defaultValues.isInclusive}
+      onChangeIsInclusive={(value) => _onChangeValue('isInclusive', value)}
+      errorAlert={error ? 'Merci de renseigner au moins un IPP' : ''}
+    >
+      <Typography className={classes.inputItem} style={{ fontWeight: 'bold' }}>
+        {ippList.length} IPP détectés.
+      </Typography>
+
+      <Grid item xs={12} className={classes.inputItem}>
+        <TextField
+          id="outlined-basic"
+          label=""
+          placeholder="Ajouter une liste d'IPP"
+          variant="outlined"
+          onChange={(event) => _onChangeValue('search', event.target.value)}
+          multiline
+          minRows={5}
+          style={{ width: '100%' }}
+        />
       </Grid>
-
-      <Grid className={classes.formContainer}>
-        {error && <Alert severity="error">Merci de renseigner au moins un IPP</Alert>}
-
-        <Grid className={classes.inputContainer} container>
-          <Typography variant="h6">Liste d'IPP</Typography>
-
-          <TextField
-            required
-            className={classes.inputItem}
-            id="criteria-name-required"
-            placeholder="Nom du critère"
-            value={defaultValues.title}
-            onChange={(e) => _onChangeValue('title', e.target.value)}
-          />
-
-          <Grid style={{ display: 'flex' }}>
-            <FormLabel
-              onClick={() => _onChangeValue('isInclusive', !defaultValues.isInclusive)}
-              style={{ margin: 'auto 1em' }}
-              component="legend"
-            >
-              Exclure les patients qui suivent les règles suivantes
-            </FormLabel>
-            <Switch
-              id="criteria-inclusive"
-              checked={!defaultValues.isInclusive}
-              onChange={(event) => _onChangeValue('isInclusive', !event.target.checked)}
-              color="secondary"
-            />
-          </Grid>
-
-          <Typography className={classes.inputItem} style={{ fontWeight: 'bold' }}>
-            {ippList.length} IPP détectés.
-          </Typography>
-
-          <Grid item xs={12} className={classes.inputItem}>
-            <TextField
-              id="outlined-basic"
-              label=""
-              placeholder="Ajouter une liste d'IPP"
-              variant="outlined"
-              onChange={(event) => _onChangeValue('search', event.target.value)}
-              multiline
-              minRows={5}
-              style={{ width: '100%' }}
-            />
-          </Grid>
-        </Grid>
-
-        <Grid className={classes.criteriaActionContainer}>
-          {!isEdition && (
-            <Button onClick={goBack} variant="outlined">
-              Annuler
-            </Button>
-          )}
-          <Button onClick={_onSubmit} disabled={error} type="submit" form="ipp-form" variant="contained">
-            Confirmer
-          </Button>
-        </Grid>
-      </Grid>
-    </Grid>
+    </CriteriaLayout>
   )
 }
 

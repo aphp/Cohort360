@@ -1,31 +1,19 @@
-import React, { useState } from 'react'
-
-import {
-  Alert,
-  Autocomplete,
-  Button,
-  Divider,
-  FormLabel,
-  Grid,
-  IconButton,
-  Link,
-  Switch,
-  TextField,
-  Typography
-} from '@mui/material'
-
-import KeyboardBackspaceIcon from '@mui/icons-material/KeyboardBackspace'
-
-import AdvancedInputs from '../../../AdvancedInputs/AdvancedInputs'
-
-import useStyles from './styles'
+import React from 'react'
 import { useAppDispatch, useAppSelector } from 'state'
 import { fetchCondition } from 'state/pmsi'
-import { CriteriaItemDataCache, CriteriaName, HierarchyTree } from 'types'
-import OccurrencesNumberInputs from '../../../AdvancedInputs/OccurrencesInputs/OccurrenceNumberInputs'
+
+import { Autocomplete, Link, TextField } from '@mui/material'
+
+import AdvancedInputs from '../../../AdvancedInputs/AdvancedInputs'
+import CriteriaLayout from 'components/ui/CriteriaLayout'
 import InputAutocompleteAsync from 'components/Inputs/InputAutocompleteAsync/InputAutocompleteAsync'
+import OccurrencesNumberInputs from '../../../AdvancedInputs/OccurrencesInputs/OccurrenceNumberInputs'
+
+import { CriteriaItemDataCache, CriteriaName, HierarchyTree } from 'types'
+import { Cim10DataType, RessourceTypeLabels } from 'types/requestCriterias'
+
 import services from 'services/aphp'
-import { Cim10DataType } from 'types/requestCriterias'
+import useStyles from './styles'
 
 type Cim10FormProps = {
   isOpen: boolean
@@ -44,7 +32,6 @@ const Cim10Form: React.FC<Cim10FormProps> = (props) => {
   const dispatch = useAppDispatch()
   const initialState: HierarchyTree | null = useAppSelector((state) => state.syncHierarchyTable)
   const currentState = { ...selectedCriteria, ...initialState }
-  const [multiFields, setMultiFields] = useState<string | null>(localStorage.getItem('multiple_fields'))
   const _onSubmit = () => {
     onChangeSelectedCriteria(currentState)
     dispatch(fetchCondition())
@@ -76,35 +63,18 @@ const Cim10Form: React.FC<Cim10FormProps> = (props) => {
     : []
 
   return isOpen ? (
-    <Grid className={classes.root}>
-      <Grid className={classes.actionContainer}>
-        {!isEdition ? (
-          <>
-            <IconButton className={classes.backButton} onClick={goBack}>
-              <KeyboardBackspaceIcon />
-            </IconButton>
-            <Divider className={classes.divider} orientation="vertical" flexItem />
-            <Typography className={classes.titleLabel}>Ajouter un critère de diagnostic</Typography>
-          </>
-        ) : (
-          <Typography className={classes.titleLabel}>Modifier un critère de diagnostic</Typography>
-        )}
-      </Grid>
-
-      <Grid className={classes.formContainer}>
-        {!multiFields && (
-          <Alert
-            severity="info"
-            onClose={() => {
-              localStorage.setItem('multiple_fields', 'ok')
-              setMultiFields('ok')
-            }}
-          >
-            Tous les éléments des champs multiples sont liés par une contrainte OU
-          </Alert>
-        )}
-
-        <Alert severity="warning">
+    <CriteriaLayout
+      criteriaLabel={`de ${RessourceTypeLabels.CONDITION.toLocaleLowerCase()}`}
+      title={currentState.title}
+      onChangeTitle={(value) => onChangeValue('title', value)}
+      isEdition={!!isEdition}
+      goBack={goBack}
+      onSubmit={_onSubmit}
+      isInclusive={!!currentState.isInclusive}
+      onChangeIsInclusive={(value) => onChangeValue('isInclusive', value)}
+      infoAlert="Tous les éléments des champs multiples sont liés par une contrainte OU"
+      warningAlert={
+        <>
           Données actuellement disponibles : PMSI ORBIS. Pour plus d'informations sur les prochaines intégrations de
           données, veuillez vous référer au tableau trimestriel de disponibilité des données disponible{' '}
           <Link
@@ -114,79 +84,42 @@ const Cim10Form: React.FC<Cim10FormProps> = (props) => {
           >
             ici
           </Link>
-        </Alert>
+        </>
+      }
+      withTabs
+    >
+      <OccurrencesNumberInputs
+        form={CriteriaName.Cim10}
+        selectedCriteria={selectedCriteria}
+        onChangeValue={onChangeValue}
+      />
 
-        <Grid className={classes.inputContainer} container>
-          <Typography variant="h6">Diagnostic</Typography>
-          <TextField
-            required
-            className={classes.inputItem}
-            id="criteria-name-required"
-            placeholder="Nom du critère"
-            variant="outlined"
-            value={currentState.title}
-            onChange={(e) => onChangeValue('title', e.target.value)}
-          />
-          <Grid style={{ display: 'flex' }}>
-            <FormLabel
-              onClick={() => onChangeValue('isInclusive', !currentState.isInclusive)}
-              style={{ margin: 'auto 1em' }}
-              component="legend"
-            >
-              Exclure les patients qui suivent les règles suivantes
-            </FormLabel>
-            <Switch
-              id="criteria-inclusive"
-              checked={!currentState.isInclusive}
-              onChange={(event) => onChangeValue('isInclusive', !event.target.checked)}
-              color="secondary"
-            />
-          </Grid>
-          <OccurrencesNumberInputs
-            form={CriteriaName.Cim10}
-            selectedCriteria={selectedCriteria}
-            onChangeValue={onChangeValue}
-          />
-
-          <InputAutocompleteAsync
-            multiple
-            label="Code CIM10"
-            variant="outlined"
-            noOptionsText="Veuillez entrer un code ou un diagnostic CIM10"
-            className={classes.inputItem}
-            autocompleteValue={defaultValuesCode}
-            autocompleteOptions={criteriaData.data.cim10Diagnostic || []}
-            getAutocompleteOptions={getDiagOptions}
-            onChange={(e, value) => {
-              onChangeValue('code', value)
-            }}
-          />
-          <Autocomplete
-            multiple
-            id="criteria-cim10-type-autocomplete"
-            className={classes.inputItem}
-            options={criteriaData.data.diagnosticTypes || []}
-            getOptionLabel={(option) => option.label}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            value={defaultValuesType}
-            onChange={(e, value) => onChangeValue('diagnosticType', value)}
-            renderInput={(params) => <TextField {...params} label="Type de diagnostic" />}
-          />
-          <AdvancedInputs form={CriteriaName.Cim10} selectedCriteria={currentState} onChangeValue={onChangeValue} />
-        </Grid>
-
-        <Grid className={classes.criteriaActionContainer}>
-          {!isEdition && (
-            <Button onClick={goBack} variant="outlined">
-              Annuler
-            </Button>
-          )}
-          <Button onClick={_onSubmit} type="submit" form="cim10-form" variant="contained">
-            Confirmer
-          </Button>
-        </Grid>
-      </Grid>
-    </Grid>
+      <InputAutocompleteAsync
+        multiple
+        label="Code CIM10"
+        variant="outlined"
+        noOptionsText="Veuillez entrer un code ou un diagnostic CIM10"
+        className={classes.inputItem}
+        autocompleteValue={defaultValuesCode}
+        autocompleteOptions={criteriaData.data.cim10Diagnostic || []}
+        getAutocompleteOptions={getDiagOptions}
+        onChange={(e, value) => {
+          onChangeValue('code', value)
+        }}
+      />
+      <Autocomplete
+        multiple
+        id="criteria-cim10-type-autocomplete"
+        className={classes.inputItem}
+        options={criteriaData.data.diagnosticTypes || []}
+        getOptionLabel={(option) => option.label}
+        isOptionEqualToValue={(option, value) => option.id === value.id}
+        value={defaultValuesType}
+        onChange={(e, value) => onChangeValue('diagnosticType', value)}
+        renderInput={(params) => <TextField {...params} label="Type de diagnostic" />}
+      />
+      <AdvancedInputs form={CriteriaName.Cim10} selectedCriteria={currentState} onChangeValue={onChangeValue} />
+    </CriteriaLayout>
   ) : (
     <></>
   )
