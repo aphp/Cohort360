@@ -127,9 +127,9 @@ const DemographicForm = (props: CriteriaDrawerComponentProps) => {
         />
       </BlockWrapper>
       {vitalStatus &&
-            (vitalStatus.length === 0 ||
-              (vitalStatus.length === 1 &&
-                vitalStatus.find((status: LabelObject) => status.label === VitalStatusLabel.DECEASED))) && (
+        (vitalStatus.length === 0 ||
+          (vitalStatus.length === 1 &&
+            vitalStatus.find((status: LabelObject) => status.label === VitalStatusLabel.DECEASED))) && (
           <BlockWrapper margin="1em">
             <CalendarRange
               inline
