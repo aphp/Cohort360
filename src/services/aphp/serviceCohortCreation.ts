@@ -2,6 +2,7 @@ import { AxiosResponse } from 'axios'
 import apiBack from '../apiBackend'
 
 import {
+  Back_API_Response,
   Cohort,
   CountCohort,
   DatedMeasure,
@@ -41,7 +42,7 @@ import {
 } from '../../constants'
 import { fetchSingleCodeHierarchy, fetchValueSet } from './callApi'
 import { DocType } from 'types/requestCriterias'
-import { VitalStatusLabel } from 'types/searchCriterias'
+import { Direction, Order, VitalStatusLabel } from 'types/searchCriterias'
 
 export interface IServiceCohortCreation {
   /**
@@ -84,43 +85,51 @@ export interface IServiceCohortCreation {
 
   fetchSnapshot: (snapshotId: string) => Promise<Snapshot>
 
-  fetchAdmissionModes: () => Promise<Array<HierarchyElement>>
-  fetchEntryModes: () => Promise<Array<HierarchyElement>>
-  fetchExitModes: () => Promise<Array<HierarchyElement>>
-  fetchPriseEnChargeType: () => Promise<Array<HierarchyElement>>
-  fetchTypeDeSejour: () => Promise<Array<HierarchyElement>>
-  fetchFileStatus: () => Promise<Array<HierarchyElement>>
-  fetchReason: () => Promise<Array<HierarchyElement>>
-  fetchDestination: () => Promise<Array<HierarchyElement>>
-  fetchProvenance: () => Promise<Array<HierarchyElement>>
-  fetchAdmission: () => Promise<Array<HierarchyElement>>
-  fetchGender: () => Promise<Array<HierarchyElement>>
+  fetchAdmissionModes: () => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchEntryModes: () => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchExitModes: () => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchPriseEnChargeType: () => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchTypeDeSejour: () => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchFileStatus: () => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchReason: () => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchDestination: () => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchProvenance: () => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchAdmission: () => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchGender: () => Promise<Back_API_Response<HierarchyElementWithSystem>>
   fetchStatus: () => Promise<Array<HierarchyElement>>
   fetchStatusDiagnostic: () => Promise<Array<HierarchyElement>>
-  fetchDiagnosticTypes: () => Promise<Array<HierarchyElement>>
+  fetchDiagnosticTypes: () => Promise<Back_API_Response<HierarchyElementWithSystem>>
   fetchCim10Diagnostic: (
     searchValue?: string,
-    noStar?: boolean,
+    exactSearch?: boolean,
     signal?: AbortSignal
-  ) => Promise<Array<HierarchyElement>>
-  fetchCim10Hierarchy: (cim10Parent?: string) => Promise<Array<HierarchyElement>>
-  fetchCcamData: (searchValue?: string, noStar?: boolean, signal?: AbortSignal) => Promise<Array<HierarchyElement>>
-  fetchCcamHierarchy: (ccamParent: string) => Promise<Array<HierarchyElement>>
-  fetchGhmData: (searchValue?: string, noStar?: boolean, signal?: AbortSignal) => Promise<Array<HierarchyElement>>
-  fetchGhmHierarchy: (ghmParent: string) => Promise<Array<HierarchyElement>>
+  ) => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchCim10Hierarchy: (cim10Parent?: string) => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchCcamData: (
+    searchValue?: string,
+    exactSearch?: boolean,
+    signal?: AbortSignal
+  ) => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchCcamHierarchy: (ccamParent: string) => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchGhmData: (
+    searchValue?: string,
+    exactSearch?: boolean,
+    signal?: AbortSignal
+  ) => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchGhmHierarchy: (ghmParent: string) => Promise<Back_API_Response<HierarchyElementWithSystem>>
   fetchDocTypes: () => Promise<DocType[]>
   fetchMedicationData: (
     searchValue?: string,
-    noStar?: boolean,
+    exactSearch?: boolean,
     signal?: AbortSignal
-  ) => Promise<Array<HierarchyElementWithSystem>>
+  ) => Promise<Back_API_Response<HierarchyElementWithSystem>>
   fetchSingleCodeHierarchy: (resourceType: string, code: string) => Promise<string[]>
-  fetchAtcHierarchy: (atcParent: string) => Promise<Array<HierarchyElement>>
-  fetchUCDList: (ucd?: string) => Promise<Array<HierarchyElement>>
-  fetchPrescriptionTypes: () => Promise<Array<HierarchyElement>>
+  fetchAtcHierarchy: (atcParent: string) => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchUCDList: (ucd?: string) => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchPrescriptionTypes: () => Promise<Back_API_Response<HierarchyElementWithSystem>>
   fetchAdministrations: () => Promise<Array<HierarchyElement>>
-  fetchBiologyData: () => Promise<Array<HierarchyElement>>
-  fetchBiologyHierarchy: (biologyParent?: string) => Promise<Array<HierarchyElement>>
+  fetchBiologyData: () => Promise<Back_API_Response<HierarchyElementWithSystem>>
+  fetchBiologyHierarchy: (biologyParent?: string) => Promise<Back_API_Response<HierarchyElementWithSystem>>
   fetchBiologySearch: (
     searchInput: string
   ) => Promise<{ anabio: ValueSetWithHierarchy[]; loinc: ValueSetWithHierarchy[] }>
@@ -264,21 +273,59 @@ const servicesCohortCreation: IServiceCohortCreation = {
   },
 
   fetchAdmissionModes: async () =>
-    fetchValueSet(ENCOUNTER_ADMISSION_MODE, { joinDisplayWithCode: false, sortingKey: 'id' }),
-  fetchEntryModes: async () => fetchValueSet(ENCOUNTER_ENTRY_MODE, { joinDisplayWithCode: false, sortingKey: 'id' }),
-  fetchExitModes: async () => fetchValueSet(ENCOUNTER_EXIT_MODE, { joinDisplayWithCode: false, sortingKey: 'id' }),
+    fetchValueSet(ENCOUNTER_ADMISSION_MODE, {
+      joinDisplayWithCode: false
+    }),
+  fetchEntryModes: async () =>
+    fetchValueSet(ENCOUNTER_ENTRY_MODE, {
+      joinDisplayWithCode: false,
+      orderBy: { orderBy: Order.CODE, orderDirection: Direction.ASC }
+    }),
+  fetchExitModes: async () =>
+    fetchValueSet(ENCOUNTER_EXIT_MODE, {
+      joinDisplayWithCode: false,
+      orderBy: { orderBy: Order.CODE, orderDirection: Direction.ASC }
+    }),
   fetchPriseEnChargeType: async () =>
     fetchValueSet(ENCOUNTER_VISIT_TYPE, {
       joinDisplayWithCode: false,
       filterOut: (value) => value.id === 'nachstationär' || value.id === 'z.zt. verlegt'
     }),
-  fetchTypeDeSejour: async () => fetchValueSet(ENCOUNTER_SEJOUR_TYPE, { joinDisplayWithCode: false, sortingKey: 'id' }),
-  fetchFileStatus: async () => fetchValueSet(ENCOUNTER_FILE_STATUS, { joinDisplayWithCode: false, sortingKey: 'id' }),
-  fetchReason: async () => fetchValueSet(ENCOUNTER_EXIT_TYPE, { joinDisplayWithCode: false, sortingKey: 'id' }),
-  fetchDestination: async () => fetchValueSet(ENCOUNTER_DESTINATION, { joinDisplayWithCode: false, sortingKey: 'id' }),
-  fetchProvenance: async () => fetchValueSet(ENCOUNTER_PROVENANCE, { joinDisplayWithCode: false, sortingKey: 'id' }),
-  fetchAdmission: async () => fetchValueSet(ENCOUNTER_ADMISSION, { joinDisplayWithCode: false, sortingKey: 'id' }),
-  fetchGender: async () => fetchValueSet(DEMOGRAPHIC_GENDER, { joinDisplayWithCode: false, sortingKey: 'id' }),
+  fetchTypeDeSejour: async () =>
+    fetchValueSet(ENCOUNTER_SEJOUR_TYPE, {
+      joinDisplayWithCode: false,
+      orderBy: { orderBy: Order.CODE, orderDirection: Direction.ASC }
+    }),
+  fetchFileStatus: async () =>
+    fetchValueSet(ENCOUNTER_FILE_STATUS, {
+      joinDisplayWithCode: false,
+      orderBy: { orderBy: Order.CODE, orderDirection: Direction.ASC }
+    }),
+  fetchReason: async () =>
+    fetchValueSet(ENCOUNTER_EXIT_TYPE, {
+      joinDisplayWithCode: false,
+      orderBy: { orderBy: Order.CODE, orderDirection: Direction.ASC }
+    }),
+  fetchDestination: async () =>
+    fetchValueSet(ENCOUNTER_DESTINATION, {
+      joinDisplayWithCode: false,
+      orderBy: { orderBy: Order.CODE, orderDirection: Direction.ASC }
+    }),
+  fetchProvenance: async () =>
+    fetchValueSet(ENCOUNTER_PROVENANCE, {
+      joinDisplayWithCode: false,
+      orderBy: { orderBy: Order.CODE, orderDirection: Direction.ASC }
+    }),
+  fetchAdmission: async () =>
+    fetchValueSet(ENCOUNTER_ADMISSION, {
+      joinDisplayWithCode: false,
+      orderBy: { orderBy: Order.CODE, orderDirection: Direction.ASC }
+    }),
+  fetchGender: async () =>
+    fetchValueSet(DEMOGRAPHIC_GENDER, {
+      joinDisplayWithCode: false,
+      orderBy: { orderBy: Order.CODE, orderDirection: Direction.ASC }
+    }),
   fetchStatus: async () => {
     return [
       {
@@ -304,38 +351,42 @@ const servicesCohortCreation: IServiceCohortCreation = {
     ]
   },
   fetchDiagnosticTypes: async () => fetchValueSet(CONDITION_STATUS),
-  fetchCim10Diagnostic: async (searchValue?: string, noStar?: boolean, signal?: AbortSignal) =>
+  fetchCim10Diagnostic: async (searchValue?: string, exactSearch?: boolean, signal?: AbortSignal) =>
     fetchValueSet(
       CONDITION_HIERARCHY,
       {
         valueSetTitle: 'Toute la hiérarchie',
         search: searchValue || '',
-        noStar
+        exactSearch
       },
       signal
     ),
   fetchCim10Hierarchy: async (cim10Parent?: string) =>
     fetchValueSet(CONDITION_HIERARCHY, { valueSetTitle: 'Toute la hiérarchie CIM10', code: cim10Parent }),
-  fetchCcamData: async (searchValue?: string, noStar?: boolean, signal?: AbortSignal) =>
+  fetchCcamData: async (searchValue?: string, exactSearch?: boolean, signal?: AbortSignal) =>
     fetchValueSet(
       PROCEDURE_HIERARCHY,
-      { valueSetTitle: 'Toute la hiérarchie', search: searchValue || '', noStar },
+      { valueSetTitle: 'Toute la hiérarchie', search: searchValue || '', exactSearch },
       signal
     ),
   fetchCcamHierarchy: async (ccamParent?: string) =>
     fetchValueSet(PROCEDURE_HIERARCHY, { valueSetTitle: 'Toute la hiérarchie CCAM', code: ccamParent }),
-  fetchGhmData: async (searchValue?: string, noStar?: boolean, signal?: AbortSignal) =>
-    fetchValueSet(CLAIM_HIERARCHY, { valueSetTitle: 'Toute la hiérarchie', search: searchValue || '', noStar }, signal),
+  fetchGhmData: async (searchValue?: string, exactSearch?: boolean, signal?: AbortSignal) =>
+    fetchValueSet(
+      CLAIM_HIERARCHY,
+      { valueSetTitle: 'Toute la hiérarchie', search: searchValue || '', exactSearch },
+      signal
+    ),
   fetchGhmHierarchy: async (ghmParent?: string) =>
     fetchValueSet(CLAIM_HIERARCHY, { valueSetTitle: 'Toute la hiérarchie GHM', code: ghmParent }),
   fetchDocTypes: () => Promise.resolve(docTypes && docTypes.docTypes.length > 0 ? docTypes.docTypes : []),
-  fetchMedicationData: async (searchValue?: string, noStar?: boolean, signal?: AbortSignal) =>
+  fetchMedicationData: async (searchValue?: string, exactSearch?: boolean, signal?: AbortSignal) =>
     fetchValueSet(
       `${MEDICATION_ATC},${MEDICATION_UCD}`,
       {
         valueSetTitle: 'Toute la hiérarchie',
         search: searchValue || '',
-        noStar
+        exactSearch
       },
       signal
     ),
@@ -358,7 +409,7 @@ const servicesCohortCreation: IServiceCohortCreation = {
     fetchValueSet(MEDICATION_ATC, {
       valueSetTitle: 'Toute la hiérarchie Médicament',
       code: atcParent,
-      sortingKey: 'id',
+      orderBy: { orderBy: Order.CODE, orderDirection: Direction.ASC },
       filterRoots: (atcData) =>
         // V--[ @TODO: This is a hot fix, remove this after a clean of data ]--V
         atcData.label.search(new RegExp(/^[A-Z] - /, 'gi')) !== -1 &&
@@ -368,15 +419,15 @@ const servicesCohortCreation: IServiceCohortCreation = {
   fetchPrescriptionTypes: async () => fetchValueSet(MEDICATION_PRESCRIPTION_TYPES, { joinDisplayWithCode: false }),
   fetchAdministrations: async () => {
     const administrations = await fetchValueSet(MEDICATION_ADMINISTRATIONS, { joinDisplayWithCode: false })
-    return administrations.map((administration) =>
+    return (administrations.results || []).map((administration) =>
       administration.id === 'GASTROTOMIE.' ? { ...administration, label: 'Gastrotomie.' } : administration
     )
   },
-  fetchBiologyData: async (searchValue?: string, noStar?: boolean) =>
+  fetchBiologyData: async (searchValue?: string, exactSearch?: boolean) =>
     fetchValueSet(`${BIOLOGY_HIERARCHY_ITM_ANABIO},${BIOLOGY_HIERARCHY_ITM_LOINC}`, {
       valueSetTitle: 'Toute la hiérarchie',
       search: searchValue || '',
-      noStar,
+      exactSearch,
       joinDisplayWithCode: false
     }),
   fetchBiologyHierarchy: async (biologyParent?: string) =>
@@ -398,7 +449,7 @@ const servicesCohortCreation: IServiceCohortCreation = {
   fetchBiologySearch: fetchBiologySearch,
   fetchModalities: async () => {
     const modalities = await fetchValueSet(IMAGING_MODALITIES, { joinDisplayWithCode: false })
-    return modalities.map((modality) => ({ ...modality, label: `${modality.id} - ${modality.label}` }))
+    return (modalities.results || []).map((modality) => ({ ...modality, label: `${modality.id} - ${modality.label}` }))
   }
 }
 

@@ -202,7 +202,7 @@ const mapConditionFromRequestParams = async (parameters: URLSearchParams) => {
     const allDiagnosticTypes = await services.cohortCreation.fetchDiagnosticTypes()
     diagnosticTypes = diagnosticTypesParams?.split(',')?.map((elem) => {
       const toParse = elem.split('|')?.[1]
-      return { id: toParse, label: allDiagnosticTypes.find((diag) => diag.id === toParse)?.label || '' }
+      return { id: toParse, label: (allDiagnosticTypes.results || []).find((diag) => diag.id === toParse)?.label || '' }
     })
   }
   const { nda, startDate, endDate, executiveUnits } = await mapGenericFromRequestParams(
@@ -250,7 +250,7 @@ const mapPrescriptionFromRequestParams = async (parameters: URLSearchParams) => 
   if (prescriptionTypesParam) {
     const types = await services.cohortCreation.fetchPrescriptionTypes()
     prescriptionTypes = prescriptionTypesParam?.split(',')?.map((elem) => {
-      return { id: elem, label: types.find((type) => type.id === elem)?.label || '' }
+      return { id: elem, label: (types.results || []).find((type) => type.id === elem)?.label || '' }
     })
   }
   const { nda, startDate, endDate, executiveUnits } = await mapGenericFromRequestParams(

@@ -1008,7 +1008,7 @@ export async function unbuildRequest(_json: string): Promise<any> {
                       currentCriterion.code?.[0].id
                     )
 
-                    if (checkChildrenResp.length === 0) {
+                    if ((checkChildrenResp.results || []).length === 0) {
                       currentCriterion.isLeaf = true
                     }
                   } catch (error) {

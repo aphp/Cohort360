@@ -28,7 +28,7 @@ const initBiologyHierarchy = createAsyncThunk<BiologyState, void, { state: RootS
       const { list } = state
 
       const biologyList: BiologyListType[] =
-        list.length === 0 ? await services.cohortCreation.fetchBiologyHierarchy() : list
+        list.length === 0 ? (await services.cohortCreation.fetchBiologyHierarchy()).results || [] : list
 
       return {
         ...state,
@@ -46,7 +46,7 @@ const fetchBiology = createAsyncThunk<BiologyState, void, { state: RootState }>(
   'biology/fetchBiology',
   async (DO_NOT_USE, { getState }) => {
     const state = getState().biology
-    const biologyList: BiologyListType[] = await services.cohortCreation.fetchBiologyHierarchy()
+    const biologyList: BiologyListType[] = (await services.cohortCreation.fetchBiologyHierarchy()).results || []
 
     return {
       ...state,
@@ -86,7 +86,7 @@ const expandBiologyElement = createAsyncThunk<BiologyState, ExpandBiologyElement
             const foundItem = item.subItems ? item.subItems.find((i: any) => i.id === 'loading') : true
             if (foundItem) {
               let subItems: BiologyListType[] = []
-              subItems = await services.cohortCreation.fetchBiologyHierarchy(item.id)
+              subItems = (await services.cohortCreation.fetchBiologyHierarchy(item.id)).results || []
 
               item = { ...item, subItems: subItems }
             }

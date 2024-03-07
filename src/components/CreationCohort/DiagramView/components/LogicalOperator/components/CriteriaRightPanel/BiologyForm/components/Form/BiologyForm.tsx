@@ -73,7 +73,7 @@ const BiologyForm: React.FC<BiologyFormProps> = (props) => {
       try {
         const getChildrenResp = await services.cohortCreation.fetchBiologyHierarchy(currentState.code?.[0].id)
 
-        if (getChildrenResp.length > 0) {
+        if ((getChildrenResp.results || []).length > 0) {
           if (currentState.isLeaf !== false) {
             onChangeValue('isLeaf', false)
           }

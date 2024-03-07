@@ -5,6 +5,7 @@ import {
   Autocomplete,
   Button,
   Divider,
+  Drawer,
   FormControlLabel,
   FormLabel,
   Grid,
@@ -27,8 +28,10 @@ import { CriteriaItemDataCache, CriteriaName, HierarchyTree } from 'types'
 import OccurrencesNumberInputs from '../../../AdvancedInputs/OccurrencesInputs/OccurrenceNumberInputs'
 import AsyncAutocomplete from 'components/ui/Inputs/AsyncAutocomplete'
 import services from 'services/aphp'
-import { MedicationDataType } from 'types/requestCriterias'
+import { MedicationDataType, RessourceType } from 'types/requestCriterias'
 import { displaySystem } from 'utils/displayValueSetSystem'
+import SearchCodes from 'components/SearchCodes'
+import { SearchOutlined } from '@mui/icons-material'
 
 type MedicationFormProps = {
   isOpen: boolean
@@ -49,13 +52,14 @@ const MedicationForm: React.FC<MedicationFormProps> = (props) => {
   const initialState: HierarchyTree | null = useAppSelector((state) => state.syncHierarchyTable)
   const currentState = { ...selectedCriteria, ...initialState }
   const [multiFields, setMultiFields] = useState<string | null>(localStorage.getItem('multiple_fields'))
+  const [openCodeResearch, setOpenCodeResearch] = useState(false)
 
-  const getMedicationOptions = async (searchValue: string, signal: AbortSignal) => {
+  /*const getMedicationOptions = async (searchValue: string, signal: AbortSignal) => {
     const response = await services.cohortCreation.fetchMedicationData(searchValue, false, signal)
     return response.map((elem) => {
       return { ...elem, label: displaySystem(elem.system) + elem.label }
     })
-  }
+  }*/
 
   const _onSubmit = () => {
     onChangeSelectedCriteria(currentState)
@@ -182,7 +186,7 @@ const MedicationForm: React.FC<MedicationFormProps> = (props) => {
             </RadioGroup>
           </Grid>
 
-          <AsyncAutocomplete
+          {/*<AsyncAutocomplete
             label="Code(s) sélectionné(s)"
             variant="outlined"
             noOptionsText="Veuillez entrer un code de médicament"
@@ -192,8 +196,8 @@ const MedicationForm: React.FC<MedicationFormProps> = (props) => {
             onChange={(value) => {
               onChangeValue('code', value)
             }}
-          />
-          {currentState.type === 'MedicationRequest' && (
+          />*/}
+          {/*currentState.type === 'MedicationRequest' && (
             <Autocomplete
               multiple
               id="criteria-prescription-type-autocomplete"
@@ -205,7 +209,39 @@ const MedicationForm: React.FC<MedicationFormProps> = (props) => {
               onChange={(e, value) => onChangeValue('prescriptionType', value)}
               renderInput={(params) => <TextField {...params} label="Type de prescription" />}
             />
-          )}
+          )*/}
+
+          <Grid container justifyContent="space-between" alignItems="center" marginBottom={1} marginTop={1}>
+            <Grid item xs={10}>
+              {selectedCriteriaPrescriptionType.length < 1 && (
+                <FormLabel style={{ margin: 'auto 1em' }} component="legend">
+                 Résultats
+                </FormLabel>
+              )}
+              {selectedCriteriaPrescriptionType.length > 0 && (
+                <FormLabel style={{ margin: 'auto 1em' }} component="legend" onClick={() => setOpenCodeResearch(true)}>
+                  Sélectionner les codes
+                </FormLabel>
+              )}
+            </Grid>
+
+            <IconButton color="primary" onClick={() => setOpenCodeResearch(true)}>
+              <SearchOutlined />
+            </IconButton>
+          </Grid>
+          <Drawer
+            open={openCodeResearch}
+            sx={{
+              flexShrink: 0,
+              '& .MuiDrawer-paper': {
+                width: 650,
+                boxSizing: 'border-box'
+              }
+            }}
+            anchor="right"
+          >
+            <SearchCodes onClose={() => setOpenCodeResearch(false)} type={RessourceType.MEDICATION} />
+          </Drawer>
           <Autocomplete
             multiple
             id="criteria-prescription-type-autocomplete"

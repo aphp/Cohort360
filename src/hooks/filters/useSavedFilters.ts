@@ -1,4 +1,3 @@
-import { Item } from 'components/ui/List/ListItem'
 import { mapRequestParamsToSearchCriteria } from 'mappers/filters'
 import { useEffect, useState } from 'react'
 import {
@@ -19,23 +18,12 @@ export type SelectedFilter<T> = {
 
 export const useSavedFilters = <T>(type: RessourceType) => {
   const [allSavedFilters, setAllSavedFilters] = useState<SavedFiltersResults | null>(null)
-  const [allSavedFiltersAsListItems, setAllSavedFiltersAsListItems] = useState<Item[]>([])
   const [savedFiltersErrors, setSavedFiltersErrors] = useState<ErrorType>({ isError: false })
   const [selectedSavedFilter, setSelectedSavedFilter] = useState<SelectedFilter<T> | null>(null)
 
   useEffect(() => {
     getSavedFilters()
   }, [type])
-
-  useEffect(
-    () =>
-      setAllSavedFiltersAsListItems(
-        allSavedFilters?.results.map((elem) => {
-          return { id: elem.uuid, name: elem.name, checked: false }
-        }) || []
-      ),
-    [allSavedFilters]
-  )
 
   const getSavedFilters = async (next?: string | null) => {
     try {
@@ -100,7 +88,6 @@ export const useSavedFilters = <T>(type: RessourceType) => {
 
   return {
     allSavedFilters,
-    allSavedFiltersAsListItems,
     selectedSavedFilter,
     savedFiltersErrors,
     methods: {

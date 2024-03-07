@@ -1,15 +1,17 @@
-import React, { PropsWithChildren, useContext, useEffect, useState } from 'react'
+import React, { PropsWithChildren, ReactElement, useContext, useEffect, useRef, useState } from 'react'
 import Modal, { FormContext } from 'components/ui/Modal'
 import Button from 'components/ui/Button'
 import { DeleteOutline, Edit, Visibility } from '@mui/icons-material'
-import { Checkbox, FormControlLabel, Grid, Typography } from '@mui/material'
-import { Item } from 'components/ui/List/ListItem'
-import ListItems from 'components/ui/List/ListItems'
+import { Checkbox, FormControlLabel, Grid, ListItemIcon, Typography, List as ListMui } from '@mui/material'
+import ListItem from 'components/ui/List/ListItem'
+import { ListItemWrapper } from './styles'
+import InfiniteScroll from 'react-infinite-scroll-component'
+import { v4 as uuidv4 } from 'uuid'
 
 type id = string
 
 type ListProps = {
-  values: Item[]
+  itemsToRender: ReactElement<typeof ListItem>[]
   count: number
   onSelect: (value: id) => void
   onDisplay?: () => void
@@ -19,9 +21,8 @@ type ListProps = {
 }
 
 const List = ({
-  children,
-  values,
   count,
+  itemsToRender,
   onDelete,
   onSelect,
   onDisplay,
@@ -29,18 +30,29 @@ const List = ({
   fetchPaginateData
 }: PropsWithChildren<ListProps>) => {
   const context = useContext(FormContext)
-  const [allElements, setAllElements] = useState<Item[]>([])
+  const [allElements, setAllElements] = useState<{ id: string; checked: boolean }[]>([])
   const [selectedElements, setSelectedElements] = useState<string[]>([])
   const [toggleDeleteModal, setToggleDeleteModal] = useState(false)
   const [toggleSelectAll, setToggleSelectAll] = useState(false)
+  const scrollableUuid = useRef(uuidv4())
+
+  const handleCheck = (id: string) => {
+    const newItems = allElements.map((item) => {
+      return { ...item, checked: item.id === id ? !item.checked : item.checked }
+    })
+    setAllElements(newItems)
+  }
 
   useEffect(() => {
     setAllElements(
-      values.map((e) => {
-        return { ...e, checked: Boolean(selectedElements.find((selected) => selected === e.id)) }
+      itemsToRender.map((item) => {
+        return {
+          id: item.props.id,
+          checked: Boolean(selectedElements.find((selected) => selected === item.props.id))
+        }
       })
     )
-  }, [values])
+  }, [itemsToRender])
 
   useEffect(() => {
     context?.updateError(false)
@@ -113,13 +125,34 @@ const List = ({
                 </Typography>
               }
             />
-            <ListItems
-              values={allElements}
-              multiple
-              count={count}
-              onchange={(newItems) => setAllElements(newItems)}
-              fetchPaginateData={fetchPaginateData}
-            />
+            <ListMui
+              id={scrollableUuid.current}
+              component="nav"
+              aria-labelledby="nested-list-subheader"
+              style={{ maxHeight: '500px', overflow: 'auto' }}
+            >
+              <InfiniteScroll
+                scrollableTarget={scrollableUuid.current}
+                dataLength={allElements.length}
+                next={fetchPaginateData}
+                hasMore={allElements.length < count}
+                scrollThreshold={0.9}
+                loader={
+                  <Grid container justifyContent="center">
+                    <Typography fontWeight={500}>Loading...</Typography>
+                  </Grid>
+                }
+              >
+                {allElements.map((elem, index) => (
+                  <ListItemWrapper key={elem.id} divider disableGutters sx={{ cursor: 'default' }}>
+                    <ListItemIcon>
+                      {<Checkbox checked={elem.checked} onChange={() => handleCheck(elem.id)} color="info" />}
+                    </ListItemIcon>
+                    {itemsToRender[index]}
+                  </ListItemWrapper>
+                ))}
+              </InfiniteScroll>
+            </ListMui>
           </Grid>
         ) : (
           <Grid item xs={12}>
@@ -129,7 +162,6 @@ const List = ({
           </Grid>
         )}
       </Grid>
-      {children}
 
       {onDelete && (
         <Modal

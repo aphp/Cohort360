@@ -31,9 +31,9 @@ const initMedicationHierarchy = createAsyncThunk<MedicationState, void, { state:
       const { list } = state
 
       const medicationList: MedicationListType[] =
-        list.length === 0 ? await services.cohortCreation.fetchAtcHierarchy('') : list
+        list.length === 0 ? (await services.cohortCreation.fetchAtcHierarchy('')).results || [] : list
 
-      const medicationUCDList: MedicationListType[] = await services.cohortCreation.fetchUCDList('')
+      const medicationUCDList: MedicationListType[] = (await services.cohortCreation.fetchUCDList('')).results || []
 
       return {
         ...state,
@@ -52,8 +52,8 @@ const fetchMedication = createAsyncThunk<MedicationState, void, { state: RootSta
   'medication/fetchMedication',
   async (DO_NOT_USE, { getState }) => {
     const state = getState().medication
-    const medicationList: MedicationListType[] = await services.cohortCreation.fetchAtcHierarchy('')
-    const medicationUCDList: MedicationListType[] = await services.cohortCreation.fetchUCDList('')
+    const medicationList: MedicationListType[] = (await services.cohortCreation.fetchAtcHierarchy('')).results || []
+    const medicationUCDList: MedicationListType[] = (await services.cohortCreation.fetchUCDList('')).results || []
 
     return {
       ...state,
@@ -95,7 +95,7 @@ const expandMedicationElement = createAsyncThunk<MedicationState, ExpandMedicati
             const foundItem = item.subItems ? item.subItems.find((i) => i.id === 'loading') : true
             if (foundItem) {
               let subItems: MedicationListType[] = []
-              subItems = await services.cohortCreation.fetchAtcHierarchy(item.id)
+              subItems = (await services.cohortCreation.fetchAtcHierarchy(item.id)).results || []
 
               item = { ...item, subItems: subItems }
             }

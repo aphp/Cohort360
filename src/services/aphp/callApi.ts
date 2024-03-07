@@ -40,7 +40,7 @@ import { getApiResponseResourceOrThrow, getApiResponseResourcesOrThrow } from 'u
 import { idSort, labelSort } from 'utils/alphabeticalSort'
 import { capitalizeFirstLetter } from 'utils/capitalize'
 import { CODE_HIERARCHY_EXTENSION_NAME } from '../../constants'
-import { Direction, Order, SavedFilter, SavedFiltersResults, SearchByTypes } from 'types/searchCriterias'
+import { Direction, Order, OrderBy, SavedFilter, SavedFiltersResults, SearchByTypes } from 'types/searchCriterias'
 import { RessourceType } from 'types/requestCriterias'
 
 export const paramValuesReducerWithPrefix =
@@ -869,13 +869,20 @@ export const fetchImaging = async (args: fetchImagingProps): FHIR_Bundle_Promise
   return response
 }
 
+type CodeListResponse = {
+  code?: string
+  display?: string
+  extension?: Extension[]
+  codeSystem?: string
+}
+
 /**
  *
  * Retrieve the codeList from FHIR api either from expanding a code or fetching the roots of the valueSet
  * @param codeSystem
  * @param code
  * @param search
- * @param noStar
+ * @param exactSearch
  * @param signal
  * @returns
  */
@@ -883,20 +890,26 @@ const getCodeList = async (
   codeSystem: string,
   expandCode?: string,
   search?: string,
-  noStar = true,
+  exactSearch = true,
+  offset?: number,
+  count?: number,
+  orderBy?: OrderBy,
   signal?: AbortSignal
-): Promise<{ code?: string; display?: string; extension?: Extension[]; codeSystem?: string }[] | undefined> => {
+): Promise<Back_API_Response<CodeListResponse>> => {
   if (!expandCode) {
     if (search !== undefined && !search.trim()) {
-      return []
+      return {}
     }
-    let searchParam = '&only-roots=true'
+    let searchParam = exactSearch ? '&only-roots=true' : '&only-roots=false'
     // if search is * then we fetch the roots of the valueSet
+    if (count) searchParam += `&_count=${count}`
+    if (offset) searchParam += `&_offset=${offset}`
+    if (orderBy) searchParam += `&_sort=${orderBy.orderDirection === Direction.ASC ? '' : '-'}${orderBy.orderBy}`
     if (search !== '*' && search !== undefined) {
-      // if noStar is true then we search for the code, else we search for the display
-      searchParam = noStar
-        ? `&only-roots=false&code=${search.trim().replace(/[\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&')}` //eslint-disable-line
-        : `&only-roots=false&_text=${encodeURIComponent(
+      // if exactSearch is true then we search for the code, else we search for the display
+      searchParam += exactSearch
+        ? `code=${search.trim().replace(/[\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&')}` //eslint-disable-line
+        : `&_text=${encodeURIComponent(
             search.trim().replace(/[\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&') //eslint-disable-line
           )}*`
     }
@@ -905,19 +918,24 @@ const getCodeList = async (
       signal: signal
     })
     const valueSetBundle = getApiResponseResourcesOrThrow(res)
-    return valueSetBundle.length > 0
-      ? valueSetBundle
-          .map((entry) => {
-            return (
-              entry.compose?.include[0].concept?.map((code) => ({
-                ...code,
-                codeSystem: entry.compose?.include[0].system
-              })) || []
-            ) //eslint-disable-line
-          })
-          .filter((valueSetPerSystem) => !!valueSetPerSystem)
-          .reduce((acc, val) => acc.concat(val), [])
-      : []
+    const results =
+      valueSetBundle.length > 0
+        ? valueSetBundle
+            .map((entry) => {
+              return (
+                entry.compose?.include[0].concept?.map((code) => ({
+                  ...code,
+                  codeSystem: entry.compose?.include[0].system
+                })) || []
+              ) //eslint-disable-line
+            })
+            .filter((valueSetPerSystem) => !!valueSetPerSystem)
+            .reduce((acc, val) => acc.concat(val), [])
+        : []
+    return {
+      results,
+      count: res.data.total
+    }
   } else {
     const json = {
       resourceType: 'ValueSet',
@@ -937,17 +955,21 @@ const getCodeList = async (
     }
     const res = await apiFhir.post<FHIR_API_Response<ValueSet>>(`/ValueSet/$expand`, JSON.stringify(json))
     const valueSetExpansion = getApiResponseResourceOrThrow(res).expansion
-    return valueSetExpansion?.contains?.map((code) => ({ ...code, codeSystem: codeSystem }))
+    return {
+      results: valueSetExpansion?.contains?.map((code) => ({ ...code, codeSystem: codeSystem }))
+    }
   }
 }
 
 export type FetchValueSetOptions = {
   valueSetTitle?: string
   code?: string
-  sortingKey?: 'id' | 'label'
   search?: string
-  noStar?: boolean
+  exactSearch?: boolean
   joinDisplayWithCode?: boolean
+  offset?: number
+  count?: number
+  orderBy?: OrderBy
   filterRoots?: (code: HierarchyElement) => boolean
   filterOut?: (code: HierarchyElement) => boolean
 }
@@ -956,21 +978,23 @@ export const fetchValueSet = async (
   codeSystem: string,
   options?: FetchValueSetOptions,
   signal?: AbortSignal
-): Promise<Array<HierarchyElementWithSystem>> => {
+): Promise<Back_API_Response<HierarchyElementWithSystem>> => {
   const {
     code,
     valueSetTitle,
-    sortingKey = 'label',
+    orderBy = { orderBy: Order.DISPLAY, orderDirection: Direction.ASC },
     search,
-    noStar,
+    exactSearch,
+    offset,
+    count,
     joinDisplayWithCode = true,
     filterRoots = () => true,
     filterOut = (value: HierarchyElement) => value.id === 'APHP generated'
   } = options || {}
-  const codeList = await getCodeList(codeSystem, code, search, noStar, signal)
-  const sortingFunc = sortingKey === 'id' ? idSort : labelSort
+  console.log("test render fetching")
+  const codeList = await getCodeList(codeSystem, code, search, exactSearch, offset, count, orderBy, signal)
   const formattedCodeList =
-    codeList
+    codeList.results
       ?.map((code) => ({
         id: code.code || '',
         label: joinDisplayWithCode
@@ -979,22 +1003,23 @@ export const fetchValueSet = async (
         system: code.codeSystem,
         subItems: [{ id: 'loading', label: 'loading', subItems: [] as HierarchyElement[] }]
       }))
-      .filter((code) => !filterOut(code))
-      .sort(sortingFunc) || []
+      .filter((code) => !filterOut(code)) || []
   if (!code && (search === undefined || search === '*') && valueSetTitle) {
-    return [{ id: '*', label: valueSetTitle, subItems: formattedCodeList.filter((code) => filterRoots(code)) }]
+    return {
+      results: [{ id: '*', label: valueSetTitle, subItems: formattedCodeList.filter((code) => filterRoots(code)) }]
+    }
   } else {
-    return formattedCodeList
+    return { results: formattedCodeList, count: codeList.count }
   }
 }
 
 export const fetchSingleCodeHierarchy = async (codeSystem: string, code: string): Promise<string[]> => {
   const codeList = await getCodeList(codeSystem, undefined, code)
-  if (!codeList || codeList.length === 0) {
+  if (!codeList || codeList.results?.length === 0) {
     return []
   }
   return (
-    codeList[0].extension
+    codeList.results?.[0].extension
       ?.find((e) => e.url === CODE_HIERARCHY_EXTENSION_NAME)
       ?.valueCodeableConcept?.coding?.map((c) => c.code || '')
       .filter((c) => !!c) || []
