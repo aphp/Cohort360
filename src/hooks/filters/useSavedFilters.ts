@@ -10,6 +10,11 @@ import { ErrorType } from 'types/error'
 import { RessourceType } from 'types/requestCriterias'
 import { Filters, SavedFilter, SavedFiltersResults, SearchCriterias } from 'types/searchCriterias'
 
+type RequestOptions = {
+  next?: string | null
+  limit?: number
+}
+
 export type SelectedFilter<T> = {
   filterUuid: string
   filterName: string
@@ -25,10 +30,10 @@ export const useSavedFilters = <T>(type: RessourceType) => {
     getSavedFilters()
   }, [type])
 
-  const getSavedFilters = async (next?: string | null) => {
+  const getSavedFilters = async (options?: RequestOptions) => {
     try {
-      const response = await getFiltersService(type, next)
-      if (next) {
+      const response = await getFiltersService(type, options?.next, options?.limit)
+      if (options?.next) {
         setAllSavedFilters({
           ...response,
           results: [...(allSavedFilters?.results || []), ...response.results]

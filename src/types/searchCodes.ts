@@ -28,6 +28,7 @@ export type Reference = {
     label: ReferencesLabel
     standard: boolean
     url: string
+    checked: boolean
 }
 
 export type SearchParameters = {
@@ -35,6 +36,6 @@ export type SearchParameters = {
   references: Reference[]
   search: string
   page: number
-  offset: number
+  limit: number
   orderBy: OrderBy
 }

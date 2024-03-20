@@ -897,13 +897,10 @@ const getCodeList = async (
   signal?: AbortSignal
 ): Promise<Back_API_Response<CodeListResponse>> => {
   if (!expandCode) {
-    if (search !== undefined && !search.trim()) {
-      return {}
-    }
     let searchParam = exactSearch ? '&only-roots=true' : '&only-roots=false'
     // if search is * then we fetch the roots of the valueSet
     if (count) searchParam += `&_count=${count}`
-    if (offset) searchParam += `&_offset=${offset}`
+    if (offset !== undefined) searchParam += `&_offset=${offset}`
     if (orderBy) searchParam += `&_sort=${orderBy.orderDirection === Direction.ASC ? '' : '-'}${orderBy.orderBy}`
     if (search !== '*' && search !== undefined) {
       // if exactSearch is true then we search for the code, else we search for the display
@@ -991,7 +988,6 @@ export const fetchValueSet = async (
     filterRoots = () => true,
     filterOut = (value: HierarchyElement) => value.id === 'APHP generated'
   } = options || {}
-  console.log("test render fetching")
   const codeList = await getCodeList(codeSystem, code, search, exactSearch, offset, count, orderBy, signal)
   const formattedCodeList =
     codeList.results

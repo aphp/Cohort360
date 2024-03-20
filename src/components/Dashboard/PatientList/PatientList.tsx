@@ -46,7 +46,7 @@ import VitalStatusesFilter from 'components/Filters/VitalStatusesFilter'
 import TextInput from 'components/Filters/TextInput'
 import { useSavedFilters } from 'hooks/filters/useSavedFilters'
 import { RessourceType } from 'types/requestCriterias'
-import List from 'components/ui/List'
+import List, { ListType } from 'components/ui/List'
 import { useAppSelector } from 'state'
 import ListItem from 'components/ui/List/ListItem'
 
@@ -161,6 +161,16 @@ const PatientList = ({ groupId, total, deidentified }: PatientListProps) => {
       fetchPatients()
     }
   }, [loadingStatus])
+
+  const memoSaved = useMemo(() => {
+    return (allSavedFilters?.results || []).map((elem) => (
+      <ListItem id={elem.uuid} key={elem.uuid}>
+        <Typography fontWeight={700} color="#00000099">
+          {elem.name}
+        </Typography>
+      </ListItem>
+    ))
+  }, [allSavedFilters?.results])
 
   return (
     <Grid container gap="25px">
@@ -303,13 +313,8 @@ const PatientList = ({ groupId, total, deidentified }: PatientListProps) => {
         validationText="Appliquer le filtre"
       >
         <List
-          itemsToRender={(allSavedFilters?.results || []).map((elem) => (
-            <ListItem id={elem.uuid}>
-              <Typography fontWeight={700} color="#00000099">
-                {elem.name}
-              </Typography>
-            </ListItem>
-          ))}
+          type={ListType.SINGLE}
+          itemsToRender={memoSaved}
           count={allSavedFilters?.count || 0}
           onDisplay={() => {
             setToggleFilterInfoModal(true)
@@ -324,8 +329,8 @@ const PatientList = ({ groupId, total, deidentified }: PatientListProps) => {
                 }
           }
           onDelete={maintenanceIsActive ? undefined : deleteSavedFilters}
-          onSelect={(filter) => selectFilter(filter)}
-          fetchPaginateData={() => getSavedFilters(allSavedFilters?.next)}
+          onSelect={(filter) => selectFilter(filter as string)}
+          fetchPaginateData={() => getSavedFilters({ next: allSavedFilters?.next })}
         />
       </Modal>
       <Modal

@@ -1321,7 +1321,6 @@ export const getDataFromFetch = async (
                   (criterion.type === RessourceType.MEDICATION_REQUEST ||
                     criterion.type === RessourceType.MEDICATION_ADMINISTRATION))
             )
-
             if (currentSelectedCriteria) {
               for (const currentcriterion of currentSelectedCriteria) {
                 if (

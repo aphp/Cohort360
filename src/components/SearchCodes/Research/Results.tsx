@@ -1,33 +1,52 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 
-import { CircularProgress, Grid, Typography } from '@mui/material'
-import List from 'components/ui/List'
+import { Grid, Typography } from '@mui/material'
+import List, { ListType } from 'components/ui/List'
 import { Back_API_Response, HierarchyElementWithSystem } from 'types'
 import ListItem from 'components/ui/List/ListItem'
 
 type ResultsProps = {
   results: Back_API_Response<HierarchyElementWithSystem>
-  loading: boolean
+  selected: Map<string, true>
+  onSelect: (ids: string[]) => void
+  onSelectAll: () => void
   onFetch: () => void
 }
 
-const Results = ({ results, loading, onFetch }: ResultsProps) => {
+const Results = ({ results, selected, onSelect, onSelectAll, onFetch }: ResultsProps) => {
+  const memoItems = useMemo(() => {
+    return (results.results || []).map((result) => (
+      <ListItem id={result.id} key={result.id}>
+        <Typography fontWeight={700} color="#00000099">
+          {result.label}
+        </Typography>
+      </ListItem>
+    ))
+  }, [results.results])
+
   return (
-    <Grid container justifyContent="center" alignItems="center">
-      {loading && <CircularProgress />}
-      {!loading && (
-        <List
-          itemsToRender={(results.results || []).map((result) => (
-            <ListItem id={result.id}>
-              <Typography>{result.label}</Typography>
-            </ListItem>
-          ))}
-          count={results.count || 0}
-          onSelect={() => {}}
-          fetchPaginateData={onFetch}
-        ></List>
-      )}
-    </Grid>
+    <>
+      <Grid container alignItems="flex-start">
+        {results.count! > 0 && (
+          <Grid item xs={12} marginBottom={2}>
+            <Typography fontWeight={800} color="secondary" fontSize={16}>
+              {results.count} résultat(s)
+            </Typography>
+          </Grid>
+        )}
+        <Grid item xs={12} height="100%">
+          <List
+            type={ListType.MULTIPLE}
+            allElements={memoItems}
+            selectedIds={selected}
+            count={results.count || 0}
+            onSelect={(ids) => onSelect(ids as string[])}
+            onSelectAll={onSelectAll}
+            fetchPaginateData={onFetch}
+          ></List>
+        </Grid>
+      </Grid>
+    </>
   )
 }
 

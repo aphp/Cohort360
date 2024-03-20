@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useState } from 'react'
 
-import { Grid, Button, Typography } from '@mui/material'
+import { Grid, Button, Divider, Typography, IconButton, SwipeableDrawer } from '@mui/material'
 
 import Tabs from 'components/ui/Tabs'
 import { LoadingStatus, TabType } from 'types'
@@ -8,6 +8,8 @@ import { RessourceType } from 'types/requestCriterias'
 import { useSearchCodes } from 'hooks/filters/useSearchCodes'
 import ResearchResults from './Research/Results'
 import SearchParameters from './Research/SearchParameters'
+import Chip from 'components/ui/Chip'
+import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material'
 
 enum SearchCodesTab {
   HIERARCHY,
@@ -33,73 +35,110 @@ const SearchCodes = ({ type, onClose }: SearchCodesProps) => {
     { id: SearchCodesTab.HIERARCHY, label: SearchCodesTabLabel.HIERARCHY },
     { id: SearchCodesTab.RESEARCH, label: SearchCodesTabLabel.RESEARCH }
   ]
-  const { searchParameters, codes, loadingStatus, addPage, addReferences, addSearch } = useSearchCodes(type)
-
-  const tabsRef = useRef<HTMLDivElement>(null)
-  const searchRef = useRef<HTMLDivElement>(null)
-  const actionsRef = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState(0)
-
-  useEffect(() => {
-    if (searchRef.current && tabsRef?.current && actionsRef.current) {
-      setHeight(
-        window.innerHeight -
-          tabsRef.current.clientHeight -
-          searchRef.current.clientHeight -
-          actionsRef.current.clientHeight -
-          81
-      )
-    }
-  }, [searchRef.current, tabsRef?.current, actionsRef.current])
+  const [openSelectedCodesDrawer, setOpenSelectedCodesDrawer] = useState(false)
+  const {
+    searchParameters,
+    codes,
+    selectedCodes,
+    selectedIds,
+    loadingStatus,
+    handleFetchAll,
+    handleFetchNext,
+    addSearchParameters,
+    handleSelectedCodes
+  } = useSearchCodes(type)
 
   return (
-    <Grid container padding="40px" justifyContent="center" alignItems="">
-      <Grid item xs={12} container>
-        <Grid item xs={12} ref={tabsRef}>
+    <Grid container justifyContent="space-between">
+      <Grid item xs={12} container padding="40px">
+        <Grid item xs={12} marginBottom={1}>
           <Tabs
             values={tabs}
             active={activeTab}
             onchange={(value: TabType<SearchCodesTab, SearchCodesTabLabel>) => setActiveTab(value)}
           />
+          <Divider />
         </Grid>
         {activeTab.id === SearchCodesTab.RESEARCH && (
           <>
-            <Grid item xs={12} ref={searchRef}>
-              <SearchParameters
-                references={searchParameters.references}
-                onSelect={(search, references) => {
-                  addSearch(search)
-                  addReferences(references)
-                }}
-              />
+            <Grid item xs={12} marginBottom={4}>
+              <SearchParameters references={searchParameters.references} onSelect={addSearchParameters} />
             </Grid>
+
             <Grid
               item
               xs={12}
               container
-              alignItems="center"
-              justifyContent="center"
               style={{
-                height: height
+                filter: loadingStatus === LoadingStatus.FETCHING ? 'blur(8px)' : 'blur(0px)'
               }}
             >
-              <ResearchResults loading={loadingStatus === LoadingStatus.FETCHING} results={codes} onFetch={addPage} />
+              <ResearchResults
+                results={codes}
+                selected={selectedIds}
+                onFetch={handleFetchNext}
+                onSelect={handleSelectedCodes}
+                onSelectAll={handleFetchAll}
+              />
             </Grid>
           </>
         )}
       </Grid>
 
-      <Grid item xs={12} container justifyContent="center" ref={actionsRef}>
-        <Grid item xs={4} container>
-          <Grid item xs={6}>
-            <Button onClick={onClose} variant="outlined">
-              Annuler
-            </Button>
+      <Grid
+        item
+        xs={12}
+        container
+        style={{ position: 'absolute', bottom: 0, left: 0, padding: '20px 40px', backgroundColor: '#E6F1FD' }}
+      >
+        {openSelectedCodesDrawer && (
+          <Grid
+            item
+            container
+            xs={12}
+            justifyContent="space-between"
+            marginBottom={2}
+            style={{ maxHeight: 200, overflowX: 'hidden', overflowY: 'auto' }}
+          >
+            {selectedCodes?.length > 0 && (
+              <Grid item xs={12} container marginBottom={3} spacing={1}>
+                {selectedCodes
+                  .filter((code) => code.label)
+                  .map((code) => (
+                    <Grid item xs={4} container key={code.id}>
+                      <Chip label={code.label} onDelete={() => handleSelectedCodes([code.id])} />
+                    </Grid>
+                  ))}
+              </Grid>
+            )}
           </Grid>
-          <Grid item xs={6}>
-            <Button onClick={onClose} variant="contained">
-              Confimer
-            </Button>
+        )}
+        <Grid item container xs={12} justifyContent="space-between" marginBottom={2}>
+          <Grid item xs={4} container>
+            <Typography textAlign="center" fontWeight={900}>
+              {selectedCodes?.length} sélectionné(s)
+            </Typography>
+          </Grid>
+          <Grid item xs={1} container justifyContent="flex-end">
+            {selectedCodes.length > 0 && (
+              <IconButton onClick={() => setOpenSelectedCodesDrawer(!openSelectedCodesDrawer)}>
+                {openSelectedCodesDrawer ? <KeyboardArrowDown /> : <KeyboardArrowUp />}
+              </IconButton>
+            )}
+          </Grid>
+        </Grid>
+        <Grid item container xs={12} justifyContent="center">
+          <Grid item xs={4} container>
+            <Grid item xs={6}>
+              <Button onClick={onClose} variant="outlined">
+                Annuler
+              </Button>
+            </Grid>
+            <Grid item xs={6}>
+              <Button onClick={onClose} variant="contained">
+                Confimer
+              </Button>
+            </Grid>
           </Grid>
         </Grid>
       </Grid>

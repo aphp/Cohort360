@@ -843,8 +843,8 @@ export const postFiltersService = async (
   return response.data
 }
 
-export const getFiltersService = async (fhir_resource: RessourceType, next?: string | null) => {
-  const LIMIT = 10
+export const getFiltersService = async (fhir_resource: RessourceType, next?: string | null, limit = 10) => {
+  const LIMIT = limit
   const OFFSET = 0
   try {
     const response = await getFilters(fhir_resource, LIMIT, OFFSET, next)

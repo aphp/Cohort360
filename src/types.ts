@@ -384,7 +384,11 @@ export type CriteriaItemType = {
 
 type FetchFunctionVariant =
   | (() => Promise<DocType[]>)
-  | ((searchValue?: string, exactSearch?: boolean, signal?: AbortSignal) => Promise<HierarchyElement[]>)
+  | ((
+      searchValue?: string,
+      exactSearch?: boolean,
+      signal?: AbortSignal
+    ) => Promise<Back_API_Response<HierarchyElement[]>>)
 
 export type ResearchType = string | boolean | AbortSignal | undefined
 
