@@ -64,7 +64,8 @@ const Index = (props: CriteriaDrawerComponentProps) => {
       defaultCriteria && defaultCriteria.code ? defaultCriteria.code : [],
       fetchMedication,
       defaultMedication.type,
-      dispatch
+      dispatch,
+      true
     )
   }
   useEffect(() => {

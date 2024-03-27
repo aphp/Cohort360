@@ -1,57 +1,44 @@
 import { fetchValueSet } from 'services/aphp/callApi'
-import { MEDICATION_UCD_13 } from '../../constants'
-import { MEDICATION_ATC } from '../../constants'
-import { MEDICATION_UCD } from '../../constants'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { RessourceType } from 'types/requestCriterias'
-import { Reference, References, ReferencesLabel, SearchParameters } from 'types/searchCodes'
+import { Reference, SearchParameters } from 'types/searchCodes'
 import { cancelPendingRequest } from 'utils/abortController'
 import { Back_API_Response, HierarchyElementWithSystem, LoadingStatus } from 'types'
-import { Direction, Order } from 'types/searchCriterias'
 
 const DEFAULT_LIMIT = 20
 
-const getMedicationSearchCodes = (): SearchParameters => {
+const initSearchParameters = (references: Reference[]): SearchParameters => {
   return {
-    type: RessourceType.MEDICATION,
     limit: DEFAULT_LIMIT,
-    page: 0,
+    offset: 0,
     search: '',
-    orderBy: { orderBy: Order.CODE, orderDirection: Direction.ASC },
-    references: [
-      { id: References.ATC, label: ReferencesLabel.ATC, standard: true, url: `${MEDICATION_ATC}`, checked: true },
-      { id: References.UCD, label: ReferencesLabel.UCD, standard: true, url: `${MEDICATION_UCD}`, checked: true },
-      {
-        id: References.UCD_13,
-        label: ReferencesLabel.UCD_13,
-        standard: false,
-        url: `${MEDICATION_UCD_13}`,
-        checked: false
-      }
-    ]
+    exactSearch: false,
+    references: references.map((ref) => ({ ...ref, checked: ref.standard })),
+    loadingStatus: LoadingStatus.IDDLE
   }
 }
-const initSearchParameters = (
-  type: RessourceType.MEDICATION | RessourceType.OBSERVATION | RessourceType.PMSI
-): SearchParameters => {
-  switch (type) {
-    case RessourceType.MEDICATION:
-      return getMedicationSearchCodes()
+
+const initHierarchyParameters = (references: Reference[]): SearchParameters => {
+  return {
+    search: '*',
+    exactSearch: true,
+    valueSetTitle: 'Toute la hiérarchie Médicament',
+    references: references.map((ref, index) => ({ ...ref, checked: index === 0 })),
+    loadingStatus: LoadingStatus.IDDLE
   }
-  return getMedicationSearchCodes()
 }
 
 type FetchParams = {
   noLimit?: boolean
+  onlyRoot?: boolean
+  parentCode?: string
 }
 
-export const useSearchCodes = (type: RessourceType.PMSI | RessourceType.OBSERVATION | RessourceType.MEDICATION) => {
-  const [searchParameters, setSearchParameters] = useState(initSearchParameters(type))
+const useSearchCodesAction = (searchParams: SearchParameters) => {
+  const [searchParameters, setSearchParameters] = useState(searchParams)
   const [codes, setCodes] = useState<Back_API_Response<HierarchyElementWithSystem>>({})
   const [selectedCodes, setSelectedCodes] = useState<HierarchyElementWithSystem[]>([])
-  const [selectAll, setSelectAll] = useState(false)
+  //const [selectAll, setSelectAll] = useState(false)
   const controllerRef = useRef<AbortController | null>(null)
-  const [loadingStatus, setLoadingStatus] = useState(LoadingStatus.IDDLE)
 
   const handleSelectedCodes = (ids: string[]) => {
     const newSelectedCodes = [...selectedCodes]
@@ -68,56 +55,133 @@ export const useSearchCodes = (type: RessourceType.PMSI | RessourceType.OBSERVAT
     })
     setSelectedCodes(newSelectedCodes)
   }
-  const addSearchParameters = (search: string, references: Reference[]) => {
-    const newReferences = searchParameters.references.map((stateRef) => ({
-      ...stateRef,
-      checked: references.find((newRef) => newRef.id === stateRef.id)?.checked || false
-    }))
-    setSearchParameters({ ...searchParameters, references: newReferences, search })
+
+  const expandHierarchy = async (parentCode: string, indexs: number[]) => {
+    const child = (await fetchCodes({ parentCode })).results || []
+    const addSubItem = (
+      tree: HierarchyElementWithSystem[],
+      depth: number,
+      indices: number[],
+      toAdd: HierarchyElementWithSystem[]
+    ) => {
+      const index = indices[depth]
+      if (depth < indices.length - 1) {
+        addSubItem(tree[index].subItems || [], depth + 1, indices, toAdd)
+      } else {
+        tree[index].subItems = toAdd
+      }
+      return tree
+    }
+    const newTree = addSubItem(codes.results || [], 0, indexs, child)
+    setCodes({ count: codes.count, results: newTree })
   }
 
-  const handleFetchAll = () => {
+  const addReferencesParameter = (references: Reference[]) => {
+    setSearchParameters({ ...searchParameters, references })
+  }
+
+  const addSearchInputParameter = (search: string) => {
+    setSearchParameters({ ...searchParameters, search })
+  }
+
+  /*const handleFetchAll = () => {
     fetchCodes({ noLimit: true })
     setSelectAll(true)
-  }
+  }*/
 
   const handleFetchNext = () => {
-    setSearchParameters({ ...searchParameters, page: searchParameters.page + 1 })
+    if (searchParameters.offset !== undefined && searchParameters.limit !== undefined)
+      setSearchParameters({ ...searchParameters, offset: searchParameters.offset + searchParameters.limit })
   }
 
   const fetchCodes = async (fetchParams?: FetchParams) => {
-    setLoadingStatus(LoadingStatus.FETCHING)
     const codeSystem = searchParameters.references
       .filter((ref) => ref.checked)
       .map((ref) => ref.url)
       .join(',')
-    const limit = fetchParams?.noLimit ? 0 : searchParameters.limit
+    const limit = fetchParams?.noLimit ? 0 : searchParameters.limit || 0
+    const parentCode = fetchParams?.parentCode || ''
     try {
       const response = await fetchValueSet(
         codeSystem,
         {
+          code: parentCode,
           search: searchParameters.search,
-          exactSearch: false,
-          offset: searchParameters.page * limit,
+          exactSearch: searchParameters.exactSearch,
+          valueSetTitle: searchParameters.valueSetTitle,
+          offset: searchParameters.offset,
           count: limit,
-          orderBy: searchParameters.orderBy
+          orderBy: searchParameters.orderBy,
+          filterRoots: searchParameters.valueSetTitle
+            ? (atcData) =>
+                atcData.label.search(new RegExp(/^[A-Z] - /, 'gi')) !== -1 &&
+                atcData.label.search(new RegExp(/^[X-Y] - /, 'gi')) !== 0
+            : undefined
         },
         controllerRef.current?.signal
       )
-      if (searchParameters.page > 0 && !fetchParams?.noLimit) {
-        setCodes({
-          ...response,
-          results: [...(codes?.results || []), ...(response.results || [])]
-        })
-      } else {
-        setCodes(response)
-      }
+      return response
     } catch {
-      setCodes({ results: [], count: 0 })
-    } finally {
-      setLoadingStatus(LoadingStatus.SUCCESS)
+      return { results: [], count: 0 }
     }
   }
+
+  const handleFetchCode = async (fetchParams?: FetchParams) => {
+    setSearchParameters({ ...searchParameters, loadingStatus: LoadingStatus.FETCHING })
+    const response = await fetchCodes()
+    if (searchParameters.offset && searchParameters.offset > 0 && !fetchParams?.noLimit) {
+      setCodes({
+        ...response,
+        results: [...(codes?.results || []), ...(response.results || [])]
+      })
+    } else {
+      setCodes(response)
+    }
+    setSearchParameters({ ...searchParameters, loadingStatus: LoadingStatus.SUCCESS })
+  }
+
+  useEffect(() => {
+    if (!searchParameters.offset) setSearchParameters({ ...searchParameters, loadingStatus: LoadingStatus.IDDLE })
+    else setSearchParameters({ ...searchParameters, offset: 0 })
+  }, [searchParameters.search, searchParameters.references, searchParameters.orderBy])
+
+  useEffect(() => {
+    setSearchParameters({ ...searchParameters, loadingStatus: LoadingStatus.IDDLE })
+  }, [searchParameters.offset])
+
+  useEffect(() => {
+    if (searchParameters.loadingStatus === LoadingStatus.IDDLE) {
+      controllerRef.current = cancelPendingRequest(controllerRef.current)
+      handleFetchCode()
+    }
+  }, [searchParameters.loadingStatus])
+
+  return {
+    searchParameters,
+    codes,
+    selectedCodes,
+    /*  handleFetchAll,*/
+    handleFetchNext,
+    addReferencesParameter,
+    addSearchInputParameter,
+    handleSelectedCodes,
+    expandHierarchy
+  }
+}
+
+export const useCodes = (references: Reference[]) => {
+  const search = useSearchCodesAction(initSearchParameters(references))
+  const hierarchy = useSearchCodesAction(initHierarchyParameters(references))
+
+  const [selectedCodes, setSelectedCodes] = useState<HierarchyElementWithSystem[]>([])
+
+  useEffect(() => {
+    const uniqueArray = [...search.selectedCodes, ...hierarchy.selectedCodes].filter((current, index, array) => {
+      const firstIndex = array.findIndex((element) => element.id === current.id && element.label === current.label)
+      return index === firstIndex
+    })
+    setSelectedCodes(uniqueArray)
+  }, [search.selectedCodes, hierarchy.selectedCodes])
 
   const selectedIds = useMemo<Map<string, true>>(() => {
     return selectedCodes.reduce((map, code) => {
@@ -126,31 +190,10 @@ export const useSearchCodes = (type: RessourceType.PMSI | RessourceType.OBSERVAT
     }, new Map())
   }, [selectedCodes])
 
-  useEffect(() => {
-    setSearchParameters({ ...searchParameters, page: 0 })
-    setLoadingStatus(LoadingStatus.IDDLE)
-  }, [searchParameters.search, searchParameters.references, searchParameters.orderBy, searchParameters.limit])
-
-  useEffect(() => {
-    setLoadingStatus(LoadingStatus.IDDLE)
-  }, [searchParameters.page])
-
-  useEffect(() => {
-    if (loadingStatus === LoadingStatus.IDDLE) {
-      controllerRef.current = cancelPendingRequest(controllerRef.current)
-      fetchCodes()
-    }
-  }, [loadingStatus])
-
   return {
-    searchParameters,
-    codes,
+    search,
+    hierarchy,
     selectedCodes,
-    selectedIds,
-    loadingStatus,
-    handleFetchAll,
-    handleFetchNext,
-    addSearchParameters,
-    handleSelectedCodes
+    selectedIds
   }
 }

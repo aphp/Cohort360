@@ -1,15 +1,18 @@
 import React, { useState } from 'react'
 
-import { Grid, Button, Divider, Typography, IconButton, SwipeableDrawer } from '@mui/material'
+import { Grid, Button, Divider, Typography, IconButton } from '@mui/material'
 
 import Tabs from 'components/ui/Tabs'
 import { LoadingStatus, TabType } from 'types'
-import { RessourceType } from 'types/requestCriterias'
-import { useSearchCodes } from 'hooks/filters/useSearchCodes'
-import ResearchResults from './Research/Results'
-import SearchParameters from './Research/SearchParameters'
+import { useCodes } from 'hooks/filters/useSearchCodes'
+import ResearchResults from './Research'
+import SearchParameters from './SearchParameters'
 import Chip from 'components/ui/Chip'
 import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material'
+import ReferencesParameters, { Type } from './References'
+import Hierarchy from './Hierarchy'
+/*import { defaultMedication } from 'components/CreationCohort/DiagramView/components/LogicalOperator/components/CriteriaRightPanel/MedicationForm'*/
+import { Reference } from 'types/searchCodes'
 
 enum SearchCodesTab {
   HIERARCHY,
@@ -22,11 +25,11 @@ enum SearchCodesTabLabel {
 }
 
 type SearchCodesProps = {
-  type: RessourceType.MEDICATION | RessourceType.PMSI | RessourceType.OBSERVATION
+  references: Reference[]
   onClose: () => void
 }
 
-const SearchCodes = ({ type, onClose }: SearchCodesProps) => {
+const SearchCodes = ({ references, onClose }: SearchCodesProps) => {
   const [activeTab, setActiveTab] = useState<TabType<SearchCodesTab, SearchCodesTabLabel>>({
     id: SearchCodesTab.HIERARCHY,
     label: SearchCodesTabLabel.HIERARCHY
@@ -36,17 +39,7 @@ const SearchCodes = ({ type, onClose }: SearchCodesProps) => {
     { id: SearchCodesTab.RESEARCH, label: SearchCodesTabLabel.RESEARCH }
   ]
   const [openSelectedCodesDrawer, setOpenSelectedCodesDrawer] = useState(false)
-  const {
-    searchParameters,
-    codes,
-    selectedCodes,
-    selectedIds,
-    loadingStatus,
-    handleFetchAll,
-    handleFetchNext,
-    addSearchParameters,
-    handleSelectedCodes
-  } = useSearchCodes(type)
+  const { search, hierarchy, selectedCodes, selectedIds } = useCodes(references)
 
   return (
     <Grid container justifyContent="space-between">
@@ -62,7 +55,11 @@ const SearchCodes = ({ type, onClose }: SearchCodesProps) => {
         {activeTab.id === SearchCodesTab.RESEARCH && (
           <>
             <Grid item xs={12} marginBottom={4}>
-              <SearchParameters references={searchParameters.references} onSelect={addSearchParameters} />
+              <SearchParameters
+                references={search.searchParameters.references}
+                onSelectSearch={search.addSearchInputParameter}
+                onSelectReferences={search.addReferencesParameter}
+              />
             </Grid>
 
             <Grid
@@ -70,15 +67,41 @@ const SearchCodes = ({ type, onClose }: SearchCodesProps) => {
               xs={12}
               container
               style={{
-                filter: loadingStatus === LoadingStatus.FETCHING ? 'blur(8px)' : 'blur(0px)'
+                filter: search.searchParameters.loadingStatus === LoadingStatus.FETCHING ? 'blur(8px)' : 'blur(0px)'
               }}
             >
               <ResearchResults
-                results={codes}
+                results={search.codes}
                 selected={selectedIds}
-                onFetch={handleFetchNext}
-                onSelect={handleSelectedCodes}
-                onSelectAll={handleFetchAll}
+                onFetch={search.handleFetchNext}
+                onSelect={search.handleSelectedCodes}
+                // onSelectAll={handleFetchAll}
+              />
+            </Grid>
+          </>
+        )}
+        {activeTab.id === SearchCodesTab.HIERARCHY && (
+          <>
+            <Grid item xs={12} marginBottom={2}>
+              <ReferencesParameters
+                onSelect={hierarchy.addReferencesParameter}
+                type={Type.SINGLE}
+                values={hierarchy.searchParameters.references}
+              />
+            </Grid>
+
+            <Grid
+              item
+              xs={12}
+              container
+              style={{
+                filter: hierarchy.searchParameters.loadingStatus === LoadingStatus.FETCHING ? 'blur(8px)' : 'blur(0px)'
+              }}
+            >
+              <Hierarchy
+                onSelect={() => {}}
+                /*selectedCriteria={defaultMedication}*/ results={hierarchy.codes}
+                onExpand={hierarchy.expandHierarchy}
               />
             </Grid>
           </>
@@ -106,7 +129,7 @@ const SearchCodes = ({ type, onClose }: SearchCodesProps) => {
                   .filter((code) => code.label)
                   .map((code) => (
                     <Grid item xs={4} container key={code.id}>
-                      <Chip label={code.label} onDelete={() => handleSelectedCodes([code.id])} />
+                      <Chip label={code.label} onDelete={() => search.handleSelectedCodes([code.id])} />
                     </Grid>
                   ))}
               </Grid>

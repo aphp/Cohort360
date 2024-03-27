@@ -32,6 +32,8 @@ import { MedicationDataType, RessourceType } from 'types/requestCriterias'
 import { displaySystem } from 'utils/displayValueSetSystem'
 import SearchCodes from 'components/SearchCodes'
 import { SearchOutlined } from '@mui/icons-material'
+import { MEDICATION_ATC, MEDICATION_UCD, MEDICATION_UCD_13 } from '../../../../../../../../../../constants'
+import { References, ReferencesLabel } from 'types/searchCodes'
 
 type MedicationFormProps = {
   isOpen: boolean
@@ -106,6 +108,17 @@ const MedicationForm: React.FC<MedicationFormProps> = (props) => {
         }
       })
     : []
+  const medicationReferences = [
+    { id: References.ATC, label: ReferencesLabel.ATC, standard: true, url: `${MEDICATION_ATC}`, checked: true },
+    { id: References.UCD, label: ReferencesLabel.UCD, standard: true, url: `${MEDICATION_UCD}`, checked: true },
+    {
+      id: References.UCD_13,
+      label: ReferencesLabel.UCD_13,
+      standard: false,
+      url: `${MEDICATION_UCD_13}`,
+      checked: false
+    }
+  ]
 
   return isOpen ? (
     <Grid className={classes.root}>
@@ -215,7 +228,7 @@ const MedicationForm: React.FC<MedicationFormProps> = (props) => {
             <Grid item xs={10}>
               {selectedCriteriaPrescriptionType.length < 1 && (
                 <FormLabel style={{ margin: 'auto 1em' }} component="legend">
-                 Résultats
+                  Résultats
                 </FormLabel>
               )}
               {selectedCriteriaPrescriptionType.length > 0 && (
@@ -240,7 +253,7 @@ const MedicationForm: React.FC<MedicationFormProps> = (props) => {
             }}
             anchor="right"
           >
-            <SearchCodes onClose={() => setOpenCodeResearch(false)} type={RessourceType.MEDICATION} />
+            <SearchCodes onClose={() => setOpenCodeResearch(false)} references={medicationReferences} />
           </Drawer>
           <Autocomplete
             multiple

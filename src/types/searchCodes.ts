@@ -1,15 +1,16 @@
-import { RessourceType } from "./requestCriterias";
-import { OrderBy } from "./searchCriterias";
+import { LoadingStatus } from 'types'
+import { RessourceType } from './requestCriterias'
+import { OrderBy } from './searchCriterias'
 
 export enum References {
-    ATC,
-    UCD,
-    UCD_13,
-    LOINC,
-    ANABIO,
-    GHM,
-    CIM10,
-    CCAM
+  ATC,
+  UCD,
+  UCD_13,
+  LOINC,
+  ANABIO,
+  GHM,
+  CIM10,
+  CCAM
 }
 
 export enum ReferencesLabel {
@@ -24,18 +25,20 @@ export enum ReferencesLabel {
 }
 
 export type Reference = {
-    id: References
-    label: ReferencesLabel
-    standard: boolean
-    url: string
-    checked: boolean
+  id: References
+  label: ReferencesLabel
+  standard: boolean
+  url: string
+  checked: boolean
 }
 
 export type SearchParameters = {
-  type: RessourceType.MEDICATION | RessourceType.OBSERVATION | RessourceType.PMSI
+  loadingStatus: LoadingStatus
   references: Reference[]
   search: string
-  page: number
-  limit: number
-  orderBy: OrderBy
+  exactSearch: boolean
+  valueSetTitle?: string
+  offset?: number
+  limit?: number
+  orderBy?: OrderBy
 }

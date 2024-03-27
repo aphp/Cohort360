@@ -9,7 +9,7 @@ type ResultsProps = {
   results: Back_API_Response<HierarchyElementWithSystem>
   selected: Map<string, true>
   onSelect: (ids: string[]) => void
-  onSelectAll: () => void
+  onSelectAll?: () => void
   onFetch: () => void
 }
 
