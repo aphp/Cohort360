@@ -11,7 +11,6 @@ import Chip from 'components/ui/Chip'
 import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material'
 import ReferencesParameters, { Type } from './References'
 import Hierarchy from './Hierarchy'
-/*import { defaultMedication } from 'components/CreationCohort/DiagramView/components/LogicalOperator/components/CriteriaRightPanel/MedicationForm'*/
 import { Reference } from 'types/searchCodes'
 
 enum SearchCodesTab {
@@ -61,7 +60,6 @@ const SearchCodes = ({ references, onClose }: SearchCodesProps) => {
                 onSelectReferences={search.addReferencesParameter}
               />
             </Grid>
-
             <Grid
               item
               xs={12}
@@ -74,7 +72,7 @@ const SearchCodes = ({ references, onClose }: SearchCodesProps) => {
                 results={search.codes}
                 selected={selectedIds}
                 onFetch={search.handleFetchNext}
-                onSelect={search.handleSelectedCodes}
+                onSelect={search.selectResearchCodes}
                 // onSelectAll={handleFetchAll}
               />
             </Grid>
@@ -89,7 +87,6 @@ const SearchCodes = ({ references, onClose }: SearchCodesProps) => {
                 values={hierarchy.searchParameters.references}
               />
             </Grid>
-
             <Grid
               item
               xs={12}
@@ -99,9 +96,10 @@ const SearchCodes = ({ references, onClose }: SearchCodesProps) => {
               }}
             >
               <Hierarchy
-                onSelect={() => {}}
-                /*selectedCriteria={defaultMedication}*/ results={hierarchy.codes}
+                onSelect={hierarchy.selectHierarchyCodes}
+                results={hierarchy.codes}
                 onExpand={hierarchy.expandHierarchy}
+                selected={selectedIds}
               />
             </Grid>
           </>
@@ -129,7 +127,7 @@ const SearchCodes = ({ references, onClose }: SearchCodesProps) => {
                   .filter((code) => code.label)
                   .map((code) => (
                     <Grid item xs={4} container key={code.id}>
-                      <Chip label={code.label} onDelete={() => search.handleSelectedCodes([code.id])} />
+                      <Chip label={code.label} onDelete={() => search.selectResearchCodes([code.id])} />
                     </Grid>
                   ))}
               </Grid>

@@ -1001,8 +1001,10 @@ export const fetchValueSet = async (
       }))
       .filter((code) => !filterOut(code)) || []
   if (!code && (search === undefined || search === '*') && valueSetTitle) {
+    const subItems = formattedCodeList.filter((code) => filterRoots(code))
+    const sortedSubItems = subItems.sort((a, b) => a.label.localeCompare(b.label))
     return {
-      results: [{ id: '*', label: valueSetTitle, subItems: formattedCodeList.filter((code) => filterRoots(code)) }]
+      results: [{ id: '*', label: valueSetTitle, subItems: sortedSubItems }]
     }
   } else {
     return { results: formattedCodeList, count: codeList.count }

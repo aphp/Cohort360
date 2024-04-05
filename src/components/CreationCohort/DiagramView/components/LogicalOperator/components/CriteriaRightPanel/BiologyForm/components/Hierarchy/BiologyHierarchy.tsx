@@ -56,7 +56,7 @@ const BiologyListItem: React.FC<BiologyListItemProps> = (props) => {
 
   const [open, setOpen] = useState(false)
   const isSelected = findSelectedInListAndSubItems(selectedItems ? selectedItems : [], biologyItem, biologyHierarchy)
-  const isIndeterminated = checkIfIndeterminated(biologyItem, selectedItems)
+  const isIndeterminated = checkIcheckIfInfIndeterminated(biologyItem, selectedItems)
   const _onExpand = async (biologyCode: string) => {
     if (isLoadingsyncHierarchyTable > 0 || isLoadingPmsi > 0) return
     dispatch(incrementLoadingSyncHierarchyTable())

@@ -723,10 +723,12 @@ export type HierarchyTree = null | {
   code?: HierarchyElement[]
   loading?: number
 }
+
 export type HierarchyElement<E = {}> = E & {
   id: string
   label: string
   subItems?: HierarchyElement[]
+  status?: SelectedStatus
 }
 
 export type HierarchyElementWithSystem = HierarchyElement<{ system?: string }>
@@ -862,4 +864,10 @@ export type FindScope = {
 
 export type CustomError = {
   errorType: string
+}
+
+export enum SelectedStatus {
+  SELECTED,
+  NOT_SELECTED,
+  INDETERMINATE
 }

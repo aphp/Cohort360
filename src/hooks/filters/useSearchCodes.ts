@@ -2,7 +2,9 @@ import { fetchValueSet } from 'services/aphp/callApi'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Reference, SearchParameters } from 'types/searchCodes'
 import { cancelPendingRequest } from 'utils/abortController'
-import { Back_API_Response, HierarchyElementWithSystem, LoadingStatus } from 'types'
+import { Back_API_Response, HierarchyElementWithSystem, LoadingStatus, SelectedStatus } from 'types'
+import { addElement, addOrRemoveElement, isFound, removeElement } from 'utils/arrays'
+import { update } from 'lodash'
 
 const DEFAULT_LIMIT = 20
 
@@ -21,7 +23,7 @@ const initHierarchyParameters = (references: Reference[]): SearchParameters => {
   return {
     search: '*',
     exactSearch: true,
-    valueSetTitle: 'Toute la hiérarchie Médicament',
+    valueSetTitle: 'Toute la hiérarchie',
     references: references.map((ref, index) => ({ ...ref, checked: index === 0 })),
     loadingStatus: LoadingStatus.IDDLE
   }
@@ -40,24 +42,94 @@ const useSearchCodesAction = (searchParams: SearchParameters) => {
   //const [selectAll, setSelectAll] = useState(false)
   const controllerRef = useRef<AbortController | null>(null)
 
-  const handleSelectedCodes = (ids: string[]) => {
-    const newSelectedCodes = [...selectedCodes]
+  const selectResearchCodes = (ids: string[]) => {
+    let newSelectedCodes = [...selectedCodes]
     ids.forEach((id) => {
-      const existingIndex = newSelectedCodes.findIndex((code) => code.id === id)
-      if (existingIndex > -1) {
-        newSelectedCodes.splice(existingIndex, 1)
-      } else {
-        const codeToAdd = (codes.results || []).find((code) => code.id === id)
-        if (codeToAdd) {
-          newSelectedCodes.push(codeToAdd)
-        }
-      }
+      const codeToAdd = (codes.results || []).find((code) => code.id === id)
+      if (codeToAdd) newSelectedCodes = addOrRemoveElement(codeToAdd, newSelectedCodes)
     })
     setSelectedCodes(newSelectedCodes)
   }
 
+  const selectHierarchyCodes = (path: number[]) => {
+    const getItemStatus = (item: HierarchyElementWithSystem): SelectedStatus => {
+      if (item.subItems?.length === 0) return item.status ? SelectedStatus.SELECTED : SelectedStatus.NOT_SELECTED
+      if (item.subItems?.every((item) => item.status === SelectedStatus.SELECTED)) return SelectedStatus.NOT_SELECTED
+      if (item.subItems?.every((item) => item.status === SelectedStatus.NOT_SELECTED))
+        return SelectedStatus.NOT_SELECTED
+      return SelectedStatus.INDETERMINATE
+    }
+    const getSelected = (path: number[], list: HierarchyElementWithSystem[]): HierarchyElementWithSystem => {
+      const currentIndex = path[0]
+      if (path.length > 1) {
+        path.shift()
+        return getSelected(path, list[currentIndex].subItems || [])
+      }
+      return list[currentIndex]
+    }
+    const updateHierarchyStatus = (path: number[], list: HierarchyElementWithSystem[], status: SelectedStatus) => {
+      const currentIndex = path[0]
+      if (path.length > 1) {
+        const newPath = [...path]
+        newPath.shift()
+        updateHierarchyStatus(newPath, list[currentIndex].subItems || [], status)
+      }
+      if (path.length === 1) {
+        list[currentIndex].status = status
+        // console.log('test status enfant', status)
+      }
+      if (path.length === 2) {
+        list[currentIndex].status = getItemStatus(list[currentIndex])
+        /*console.log(
+          'test status parent',
+          getItemStatus(list[currentIndex]),
+          list[currentIndex].label,
+          list[currentIndex].subItems
+        )*/
+      }
+      return [...list]
+    }
+    const updateSelectedCodes = (
+      path: number[],
+      list: HierarchyElementWithSystem[],
+      selectedCodes: HierarchyElementWithSystem[],
+      status: SelectedStatus
+    ) => {
+      const currentIndex = path[0]
+      //let newSelectedCodes: HierarchyElementWithSystem[] = []
+      if (path.length > 1) {
+        const newPath = [...path]
+        newPath.shift()
+        updateSelectedCodes(newPath, list[currentIndex].subItems || [], selectedCodes, status)
+      }
+      /*if (path.length === 1) {
+        newSelectedCodes = addOrRemoveElement(list[currentIndex], selectedCodes)
+      }*/
+      if (path.length === 1) {
+        if (status === SelectedStatus.SELECTED) {
+          selectedCodes = addElement(list[currentIndex], selectedCodes)
+          list[currentIndex].subItems?.forEach((subItem) => {
+            selectedCodes = removeElement(subItem, selectedCodes)
+          })
+        } else {
+          selectedCodes = removeElement(list[currentIndex], selectedCodes)
+        }
+      }
+      return selectedCodes
+    }
+    const codeToAdd = getSelected([...path], codes.results || [])
+    const status = isFound(codeToAdd, selectedCodes) ? SelectedStatus.NOT_SELECTED : SelectedStatus.SELECTED
+    // newSelectedCodes = addOrRemoveElement(codeToAdd, newSelectedCodes)
+    const updatedHierarchy = updateHierarchyStatus(path, codes.results || [], status)
+    const updatedSelectedCodes = updateSelectedCodes(path, updatedHierarchy, selectedCodes, status)
+    console.log('test selection', updatedSelectedCodes)
+    setSelectedCodes([...updatedSelectedCodes])
+    setCodes({ ...codes, results: updatedHierarchy })
+  }
+
   const expandHierarchy = async (parentCode: string, indexs: number[]) => {
     const child = (await fetchCodes({ parentCode })).results || []
+    const sortedChild = child.sort((a, b) => a.label.localeCompare(b.label))
     const addSubItem = (
       tree: HierarchyElementWithSystem[],
       depth: number,
@@ -72,7 +144,7 @@ const useSearchCodesAction = (searchParams: SearchParameters) => {
       }
       return tree
     }
-    const newTree = addSubItem(codes.results || [], 0, indexs, child)
+    const newTree = addSubItem(codes.results || [], 0, indexs, sortedChild)
     setCodes({ count: codes.count, results: newTree })
   }
 
@@ -164,7 +236,8 @@ const useSearchCodesAction = (searchParams: SearchParameters) => {
     handleFetchNext,
     addReferencesParameter,
     addSearchInputParameter,
-    handleSelectedCodes,
+    selectResearchCodes,
+    selectHierarchyCodes,
     expandHierarchy
   }
 }
@@ -176,6 +249,7 @@ export const useCodes = (references: Reference[]) => {
   const [selectedCodes, setSelectedCodes] = useState<HierarchyElementWithSystem[]>([])
 
   useEffect(() => {
+    console.log('test selected', hierarchy.selectedCodes)
     const uniqueArray = [...search.selectedCodes, ...hierarchy.selectedCodes].filter((current, index, array) => {
       const firstIndex = array.findIndex((element) => element.id === current.id && element.label === current.label)
       return index === firstIndex
