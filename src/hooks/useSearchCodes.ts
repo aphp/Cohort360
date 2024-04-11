@@ -3,8 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Reference, SearchParameters } from 'types/searchCodes'
 import { cancelPendingRequest } from 'utils/abortController'
 import { Back_API_Response, HierarchyElementWithSystem, LoadingStatus, SelectedStatus } from 'types'
-import { addElement, addOrRemoveElement, isFound, removeElement } from 'utils/arrays'
-import { update } from 'lodash'
+import { addOrRemoveElement } from 'utils/arrays'
+import { addSubItems, getSelectedCodes, updateSelectedStatus } from 'utils/hierarchy'
 
 const DEFAULT_LIMIT = 20
 
@@ -51,100 +51,18 @@ const useSearchCodesAction = (searchParams: SearchParameters) => {
     setSelectedCodes(newSelectedCodes)
   }
 
-  const selectHierarchyCodes = (path: number[]) => {
-    const getItemStatus = (item: HierarchyElementWithSystem): SelectedStatus => {
-      if (item.subItems?.length === 0) return item.status ? SelectedStatus.SELECTED : SelectedStatus.NOT_SELECTED
-      if (item.subItems?.every((item) => item.status === SelectedStatus.SELECTED)) return SelectedStatus.NOT_SELECTED
-      if (item.subItems?.every((item) => item.status === SelectedStatus.NOT_SELECTED))
-        return SelectedStatus.NOT_SELECTED
-      return SelectedStatus.INDETERMINATE
-    }
-    const getSelected = (path: number[], list: HierarchyElementWithSystem[]): HierarchyElementWithSystem => {
-      const currentIndex = path[0]
-      if (path.length > 1) {
-        path.shift()
-        return getSelected(path, list[currentIndex].subItems || [])
-      }
-      return list[currentIndex]
-    }
-    const updateHierarchyStatus = (path: number[], list: HierarchyElementWithSystem[], status: SelectedStatus) => {
-      const currentIndex = path[0]
-      if (path.length > 1) {
-        const newPath = [...path]
-        newPath.shift()
-        updateHierarchyStatus(newPath, list[currentIndex].subItems || [], status)
-      }
-      if (path.length === 1) {
-        list[currentIndex].status = status
-        // console.log('test status enfant', status)
-      }
-      if (path.length === 2) {
-        list[currentIndex].status = getItemStatus(list[currentIndex])
-        /*console.log(
-          'test status parent',
-          getItemStatus(list[currentIndex]),
-          list[currentIndex].label,
-          list[currentIndex].subItems
-        )*/
-      }
-      return [...list]
-    }
-    const updateSelectedCodes = (
-      path: number[],
-      list: HierarchyElementWithSystem[],
-      selectedCodes: HierarchyElementWithSystem[],
-      status: SelectedStatus
-    ) => {
-      const currentIndex = path[0]
-      //let newSelectedCodes: HierarchyElementWithSystem[] = []
-      if (path.length > 1) {
-        const newPath = [...path]
-        newPath.shift()
-        updateSelectedCodes(newPath, list[currentIndex].subItems || [], selectedCodes, status)
-      }
-      /*if (path.length === 1) {
-        newSelectedCodes = addOrRemoveElement(list[currentIndex], selectedCodes)
-      }*/
-      if (path.length === 1) {
-        if (status === SelectedStatus.SELECTED) {
-          selectedCodes = addElement(list[currentIndex], selectedCodes)
-          list[currentIndex].subItems?.forEach((subItem) => {
-            selectedCodes = removeElement(subItem, selectedCodes)
-          })
-        } else {
-          selectedCodes = removeElement(list[currentIndex], selectedCodes)
-        }
-      }
-      return selectedCodes
-    }
-    const codeToAdd = getSelected([...path], codes.results || [])
-    const status = isFound(codeToAdd, selectedCodes) ? SelectedStatus.NOT_SELECTED : SelectedStatus.SELECTED
-    // newSelectedCodes = addOrRemoveElement(codeToAdd, newSelectedCodes)
-    const updatedHierarchy = updateHierarchyStatus(path, codes.results || [], status)
-    const updatedSelectedCodes = updateSelectedCodes(path, updatedHierarchy, selectedCodes, status)
-    console.log('test selection', updatedSelectedCodes)
-    setSelectedCodes([...updatedSelectedCodes])
+  const selectHierarchyCodes = (path: number[], toAdd: boolean) => {
+    const status = toAdd ? SelectedStatus.NOT_SELECTED : SelectedStatus.SELECTED
+    const updatedHierarchy = updateSelectedStatus(path, codes.results || [], status)
+    const updatedSelectedCodes = getSelectedCodes(updatedHierarchy[0], [])
+    setSelectedCodes(updatedSelectedCodes)
     setCodes({ ...codes, results: updatedHierarchy })
   }
 
   const expandHierarchy = async (parentCode: string, indexs: number[]) => {
     const child = (await fetchCodes({ parentCode })).results || []
     const sortedChild = child.sort((a, b) => a.label.localeCompare(b.label))
-    const addSubItem = (
-      tree: HierarchyElementWithSystem[],
-      depth: number,
-      indices: number[],
-      toAdd: HierarchyElementWithSystem[]
-    ) => {
-      const index = indices[depth]
-      if (depth < indices.length - 1) {
-        addSubItem(tree[index].subItems || [], depth + 1, indices, toAdd)
-      } else {
-        tree[index].subItems = toAdd
-      }
-      return tree
-    }
-    const newTree = addSubItem(codes.results || [], 0, indexs, sortedChild)
+    const newTree = addSubItems(codes.results || [], 0, indexs, sortedChild)
     setCodes({ count: codes.count, results: newTree })
   }
 
@@ -162,6 +80,7 @@ const useSearchCodesAction = (searchParams: SearchParameters) => {
   }*/
 
   const handleFetchNext = () => {
+    console.log('test infinte', searchParameters.offset, searchParameters.limit)
     if (searchParameters.offset !== undefined && searchParameters.limit !== undefined)
       setSearchParameters({ ...searchParameters, offset: searchParameters.offset + searchParameters.limit })
   }
@@ -249,7 +168,6 @@ export const useCodes = (references: Reference[]) => {
   const [selectedCodes, setSelectedCodes] = useState<HierarchyElementWithSystem[]>([])
 
   useEffect(() => {
-    console.log('test selected', hierarchy.selectedCodes)
     const uniqueArray = [...search.selectedCodes, ...hierarchy.selectedCodes].filter((current, index, array) => {
       const firstIndex = array.findIndex((element) => element.id === current.id && element.label === current.label)
       return index === firstIndex

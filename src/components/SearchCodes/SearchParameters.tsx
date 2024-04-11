@@ -24,8 +24,8 @@ const SearchParameters = ({ references, onSelectSearch, onSelectReferences }: Se
   }
 
   return (
-    <Grid container justifyContent="space-between" alignItems="center">
-      <Grid item xs={12} marginBottom={2}>
+    <>
+      <Grid item xs={12}>
         <ReferencesParameters values={references} onSelect={handleReferenceChange} type={Type.MULTIPLE} />
         {error && (
           <Grid item marginTop={2}>
@@ -37,7 +37,7 @@ const SearchParameters = ({ references, onSelectSearch, onSelectReferences }: Se
       </Grid>
       <Grid item xs={12}>
         <Paper sx={{ padding: '20px' }}>
-          <Grid item marginBottom={1}>
+          <Grid item>
             <InputWrapper>
               <Typography variant="h3">Recherche textuelle :</Typography>
             </InputWrapper>
@@ -47,7 +47,7 @@ const SearchParameters = ({ references, onSelectSearch, onSelectReferences }: Se
           </Grid>
         </Paper>
       </Grid>
-    </Grid>
+    </>
   )
 }
 

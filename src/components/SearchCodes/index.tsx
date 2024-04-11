@@ -12,6 +12,7 @@ import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material'
 import ReferencesParameters, { Type } from './References'
 import Hierarchy from './Hierarchy'
 import { Reference } from 'types/searchCodes'
+import SelectedCodes from './SelectedCodes'
 
 enum SearchCodesTab {
   HIERARCHY,
@@ -37,13 +38,12 @@ const SearchCodes = ({ references, onClose }: SearchCodesProps) => {
     { id: SearchCodesTab.HIERARCHY, label: SearchCodesTabLabel.HIERARCHY },
     { id: SearchCodesTab.RESEARCH, label: SearchCodesTabLabel.RESEARCH }
   ]
-  const [openSelectedCodesDrawer, setOpenSelectedCodesDrawer] = useState(false)
   const { search, hierarchy, selectedCodes, selectedIds } = useCodes(references)
 
   return (
-    <Grid container justifyContent="space-between">
-      <Grid item xs={12} container padding="40px">
-        <Grid item xs={12} marginBottom={1}>
+    <Grid container style={{ height: '100vh' }}>
+      <Grid item xs={12} container padding="5vh 40px">
+        <Grid item xs={12} style={{ height: '5vh' }}>
           <Tabs
             values={tabs}
             active={activeTab}
@@ -53,7 +53,7 @@ const SearchCodes = ({ references, onClose }: SearchCodesProps) => {
         </Grid>
         {activeTab.id === SearchCodesTab.RESEARCH && (
           <>
-            <Grid item xs={12} marginBottom={4}>
+            <Grid container style={{ height: '25vh' }}>
               <SearchParameters
                 references={search.searchParameters.references}
                 onSelectSearch={search.addSearchInputParameter}
@@ -65,6 +65,7 @@ const SearchCodes = ({ references, onClose }: SearchCodesProps) => {
               xs={12}
               container
               style={{
+                height: '48vh',
                 filter: search.searchParameters.loadingStatus === LoadingStatus.FETCHING ? 'blur(8px)' : 'blur(0px)'
               }}
             >
@@ -80,7 +81,7 @@ const SearchCodes = ({ references, onClose }: SearchCodesProps) => {
         )}
         {activeTab.id === SearchCodesTab.HIERARCHY && (
           <>
-            <Grid item xs={12} marginBottom={2}>
+            <Grid item xs={12} style={{ height: '15vh' }}>
               <ReferencesParameters
                 onSelect={hierarchy.addReferencesParameter}
                 type={Type.SINGLE}
@@ -92,6 +93,7 @@ const SearchCodes = ({ references, onClose }: SearchCodesProps) => {
               xs={12}
               container
               style={{
+                height: '58vh',
                 filter: hierarchy.searchParameters.loadingStatus === LoadingStatus.FETCHING ? 'blur(8px)' : 'blur(0px)'
               }}
             >
@@ -99,55 +101,19 @@ const SearchCodes = ({ references, onClose }: SearchCodesProps) => {
                 onSelect={hierarchy.selectHierarchyCodes}
                 results={hierarchy.codes}
                 onExpand={hierarchy.expandHierarchy}
-                selected={selectedIds}
               />
             </Grid>
           </>
         )}
       </Grid>
-
       <Grid
         item
         xs={12}
-        container
-        style={{ position: 'absolute', bottom: 0, left: 0, padding: '20px 40px', backgroundColor: '#E6F1FD' }}
+        style={{ backgroundColor: '#E6F1FD', height: '12vh' }}
+        padding="20px 40px 0px 40px"
+        // style={{ position: 'absolute', bottom: 0, left: 0, padding: '20px 40px', backgroundColor: '#E6F1FD' }}
       >
-        {openSelectedCodesDrawer && (
-          <Grid
-            item
-            container
-            xs={12}
-            justifyContent="space-between"
-            marginBottom={2}
-            style={{ maxHeight: 200, overflowX: 'hidden', overflowY: 'auto' }}
-          >
-            {selectedCodes?.length > 0 && (
-              <Grid item xs={12} container marginBottom={3} spacing={1}>
-                {selectedCodes
-                  .filter((code) => code.label)
-                  .map((code) => (
-                    <Grid item xs={4} container key={code.id}>
-                      <Chip label={code.label} onDelete={() => search.selectResearchCodes([code.id])} />
-                    </Grid>
-                  ))}
-              </Grid>
-            )}
-          </Grid>
-        )}
-        <Grid item container xs={12} justifyContent="space-between" marginBottom={2}>
-          <Grid item xs={4} container>
-            <Typography textAlign="center" fontWeight={900}>
-              {selectedCodes?.length} sélectionné(s)
-            </Typography>
-          </Grid>
-          <Grid item xs={1} container justifyContent="flex-end">
-            {selectedCodes.length > 0 && (
-              <IconButton onClick={() => setOpenSelectedCodesDrawer(!openSelectedCodesDrawer)}>
-                {openSelectedCodesDrawer ? <KeyboardArrowDown /> : <KeyboardArrowUp />}
-              </IconButton>
-            )}
-          </Grid>
-        </Grid>
+        <SelectedCodes values={selectedCodes} onDelete={() => {}} />
         <Grid item container xs={12} justifyContent="center">
           <Grid item xs={4} container>
             <Grid item xs={6}>

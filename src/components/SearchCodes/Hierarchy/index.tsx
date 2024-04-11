@@ -9,14 +9,12 @@ import { Back_API_Response, HierarchyElementWithSystem, SelectedStatus } from 't
 
 type HierarchyItemProps = {
   item: HierarchyElementWithSystem
-  selected: Map<string, true>
   indexs: number[]
-  /*parentStatus: SelectedStatus*/
-  onSelect: (path: number[]) => void
+  onSelect: (path: number[], toAdd: boolean) => void
   onExpand: (parentCode: string, index: number[]) => void
 }
 
-const HierarchyItem = ({ item, selected /*, parentStatus*/, indexs, onSelect, onExpand }: HierarchyItemProps) => {
+const HierarchyItem = ({ item, /*selected,*/ indexs, onSelect, onExpand }: HierarchyItemProps) => {
   const { classes, cx } = useStyles()
   const [open, setOpen] = useState(false)
   const { id, label, subItems, status } = item
@@ -24,12 +22,6 @@ const HierarchyItem = ({ item, selected /*, parentStatus*/, indexs, onSelect, on
   const handleExpand = async (parentCode: string) => {
     onExpand(parentCode, indexs)
   }
-
-  /*useEffect(() => {
-    console.log('test parentStatus updated', parentStatus)
-    //setStatus(parentStatus)
-    status = parentStatus
-  }, [parentStatus])*/
 
   useEffect(() => {
     if (open === true && subItems?.length && subItems[0].id === 'loading') handleExpand(id)
@@ -40,7 +32,9 @@ const HierarchyItem = ({ item, selected /*, parentStatus*/, indexs, onSelect, on
       <ListItem className={classes.medicationItem} style={{ cursor: 'pointer' }}>
         <ListItemIcon>
           <div
-            onClick={() => onSelect(indexs)}
+            onClick={() =>
+              onSelect(indexs, status === SelectedStatus.SELECTED || status === SelectedStatus.INDETERMINATE)
+            }
             className={cx(classes.indicator, {
               [classes.selectedIndicator]: status === SelectedStatus.SELECTED,
               [classes.indeterminateIndicator]: status === SelectedStatus.INDETERMINATE
@@ -67,16 +61,13 @@ const HierarchyItem = ({ item, selected /*, parentStatus*/, indexs, onSelect, on
                   </Fragment>
                 )
               } else {
-                console.log('test', status, subItem.status)
                 subItem.status = status !== SelectedStatus.INDETERMINATE ? status : subItem.status
                 return (
                   <Fragment key={currentIndex}>
                     <div className={classes.subItemsIndicator} />
                     <HierarchyItem
                       indexs={[...indexs, currentIndex]}
-                      /*parentStatus={status}*/
                       item={subItem}
-                      selected={selected}
                       onSelect={onSelect}
                       onExpand={onExpand}
                     />
@@ -92,30 +83,17 @@ const HierarchyItem = ({ item, selected /*, parentStatus*/, indexs, onSelect, on
 
 type HierarchyProps = {
   results: Back_API_Response<HierarchyElementWithSystem>
-  selected: Map<string, true>
   onExpand: (parentCode: string, index: number[]) => void
-  onSelect: (path: number[]) => void
+  onSelect: (path: number[], toAdd: boolean) => void
 }
 
-const Hierarchy = ({ results, selected, onSelect, onExpand }: HierarchyProps) => {
+const Hierarchy = ({ results, onSelect, onExpand }: HierarchyProps) => {
   const { classes } = useStyles()
 
   return (
     <List component="nav" aria-labelledby="nested-list-subheader" className={classes.drawerContentContainer}>
       {(results && (results.results || [])).map((item) => {
-        //console.log('test', item.status)
-        //const status = item.status || SelectedStatus.NOT_SELECTED
-        return (
-          <HierarchyItem
-            //parentStatus={status}
-            indexs={[0]}
-            key={item.id}
-            item={item}
-            onExpand={onExpand}
-            selected={selected}
-            onSelect={onSelect}
-          />
-        )
+        return <HierarchyItem indexs={[0]} key={item.id} item={item} onExpand={onExpand} onSelect={onSelect} />
       })}
     </List>
   )

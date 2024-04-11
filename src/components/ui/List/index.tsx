@@ -144,7 +144,7 @@ const List = ({
               id={scrollableUuid.current}
               component="nav"
               aria-labelledby="nested-list-subheader"
-              style={{ maxHeight: '500px', overflow: 'auto' }}
+              style={{ maxHeight: '40vh', overflow: 'auto' }}
             >
               <InfiniteScroll
                 scrollableTarget={scrollableUuid.current}
@@ -154,7 +154,7 @@ const List = ({
                 scrollThreshold={0.9}
                 loader={<Fragment />}
               >
-                {allElements.slice(0, elemsToRenderLimit).map((elem, index) => (
+                {allElements.slice(0, elemsToRenderLimit).map((elem) => (
                   <ListItemWrapper key={elem.props.id} divider disableGutters sx={{ cursor: 'default' }}>
                     <ListItemIcon>
                       <Checkbox

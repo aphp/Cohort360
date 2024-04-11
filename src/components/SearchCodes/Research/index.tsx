@@ -26,7 +26,7 @@ const Results = ({ results, selected, onSelect, onSelectAll, onFetch }: ResultsP
 
   return (
     <>
-      <Grid container alignItems="flex-start">
+      <Grid container>
         {results.count! > 0 && (
           <Grid item xs={12} marginBottom={2}>
             <Typography fontWeight={800} color="secondary" fontSize={16}>
@@ -34,7 +34,7 @@ const Results = ({ results, selected, onSelect, onSelectAll, onFetch }: ResultsP
             </Typography>
           </Grid>
         )}
-        <Grid item xs={12} height="100%">
+        <Grid item xs={12}>
           <List
             type={ListType.MULTIPLE}
             allElements={memoItems}
