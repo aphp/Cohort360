@@ -1,0 +1,17 @@
+import { SelectedStatus } from 'types'
+
+export enum NodeValidity {
+  NOT_VALID,
+  VALID
+}
+
+export type Hierarchy<T, S> = T & {
+  id: S
+  above_levels_ids: string
+  inferior_levels_ids: string
+  status?: SelectedStatus
+  validity?: NodeValidity
+  subItems?: Hierarchy<T, S>[]
+}
+
+export type InfiniteMap = Map<string, InfiniteMap>

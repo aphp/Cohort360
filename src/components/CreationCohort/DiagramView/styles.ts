@@ -23,6 +23,15 @@ const useStyles = makeStyles()((theme: Theme) => ({
       flexDirection: 'column',
       flexWrap: 'nowrap'
     }
+  },
+  actionButton: {
+    backgroundColor: '#19235A',
+    color: '#FFFFFF',
+    borderRadius: 25,
+    padding: '6px 12px',
+    '&:hover': {
+      backgroundColor: '#19235A'
+    }
   }
 }))
 

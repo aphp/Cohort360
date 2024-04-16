@@ -2,14 +2,14 @@ import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit'
 import { RootState } from 'state'
 import {
   CohortCreationCounterType,
-  ScopeTreeRow,
   CriteriaGroup,
   TemporalConstraintsType,
   TemporalConstraintsKind,
   QuerySnapshotInfo,
   CurrentSnapshot,
   CohortJobStatus,
-  CriteriaGroupType
+  CriteriaGroupType,
+  ScopeElement
 } from 'types'
 
 import { buildRequest, unbuildRequest, joinRequest, checkNominativeCriteria } from 'utils/cohortCreation'
@@ -21,6 +21,7 @@ import { deleteProject } from './project'
 import services from 'services/aphp'
 import { SHORT_COHORT_LIMIT } from '../constants'
 import { SelectedCriteriaType } from 'types/requestCriterias'
+import { Hierarchy } from 'types/hierarchy'
 
 export type CohortCreationState = {
   loading: boolean
@@ -35,8 +36,8 @@ export type CohortCreationState = {
   navHistory: CurrentSnapshot[]
   snapshotsHistory: QuerySnapshotInfo[]
   count: CohortCreationCounterType
-  selectedPopulation: (ScopeTreeRow | undefined)[] | null
-  executiveUnits: (ScopeTreeRow | undefined)[] | null
+  selectedPopulation: Hierarchy<ScopeElement, string>[] | null
+  executiveUnits: (Hierarchy<ScopeElement, string> | undefined)[] | null
   allowSearchIpp: boolean
   selectedCriteria: SelectedCriteriaType[]
   isCriteriaNominative: boolean
@@ -258,17 +259,16 @@ const saveJson = createAsyncThunk<SaveJsonReturn, SaveJsonParams, { state: RootS
  */
 type BuildCohortReturn = {
   json: string
-  selectedPopulation: (ScopeTreeRow | undefined)[] | null
+  selectedPopulation: Hierarchy<ScopeElement, string>[] | null
 }
 type BuildCohortParams = {
-  selectedPopulation?: ScopeTreeRow[] | null
+  selectedPopulation: Hierarchy<ScopeElement, string>[] | null
 }
 const buildCohortCreation = createAsyncThunk<BuildCohortReturn, BuildCohortParams, { state: RootState }>(
   'cohortCreation/build',
   async ({ selectedPopulation }, { getState, dispatch }) => {
     try {
       const state = getState()
-
       const _selectedPopulation = selectedPopulation
         ? selectedPopulation
         : state.cohortCreation.request.selectedPopulation
@@ -294,9 +294,7 @@ const buildCohortCreation = createAsyncThunk<BuildCohortReturn, BuildCohortParam
         )
       }
 
-      const allowSearchIpp = _selectedPopulation
-        ? await services.perimeters.allowSearchIpp(_selectedPopulation as ScopeTreeRow[])
-        : false
+      const allowSearchIpp = _selectedPopulation ? await services.perimeters.allowSearchIpp(_selectedPopulation) : false
 
       let _initTemporalConstraints
 
@@ -337,7 +335,7 @@ const buildCohortCreation = createAsyncThunk<BuildCohortReturn, BuildCohortParam
 type UnbuildCohortReturn = {
   json: string
   currentSnapshot: CurrentSnapshot
-  selectedPopulation: (ScopeTreeRow | undefined)[] | null
+  selectedPopulation: Hierarchy<ScopeElement, string>[] | null
   selectedCriteria: SelectedCriteriaType[]
   criteriaGroup: CriteriaGroup[]
   nextCriteriaId: number
@@ -351,7 +349,6 @@ const unbuildCohortCreation = createAsyncThunk<UnbuildCohortReturn, UnbuildParam
     try {
       const { serialized_query, dated_measures } = newCurrentSnapshot
       const { population, criteria, criteriaGroup, temporalConstraints } = await unbuildRequest(serialized_query)
-
       let _temporalConstraints
       let isCriteriaNominative = false
 
@@ -368,7 +365,7 @@ const unbuildCohortCreation = createAsyncThunk<UnbuildCohortReturn, UnbuildParam
 
       let allowSearchIpp = false
       if (population) {
-        allowSearchIpp = await services.perimeters.allowSearchIpp(population as ScopeTreeRow[])
+        allowSearchIpp = await services.perimeters.allowSearchIpp(population)
       }
 
       if (checkNominativeCriteria(criteria)) {
@@ -471,7 +468,10 @@ const cohortCreationSlice = createSlice({
       state.cohortName = action.payload
     },
     //
-    setPopulationSource: (state: CohortCreationState, action: PayloadAction<ScopeTreeRow[] | null>) => {
+    setPopulationSource: (
+      state: CohortCreationState,
+      action: PayloadAction<Hierarchy<ScopeElement, string>[] | null>
+    ) => {
       state.selectedPopulation = action.payload
     },
     setSelectedCriteria: (state: CohortCreationState, action: PayloadAction<SelectedCriteriaType[]>) => {

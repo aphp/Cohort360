@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react'
 import moment from 'moment'
-import { ScopeTreeRow, SimpleCodeType } from 'types'
+import { SimpleCodeType } from 'types'
 import {
   Comparators,
   CriteriaDataKey,
@@ -20,6 +20,8 @@ import { getDurationRangeLabel } from './age'
 import { displaySystem } from './displayValueSetSystem'
 import { CriteriaState } from 'state/criteria'
 import { Tooltip, Typography } from '@mui/material'
+import { Hierarchy } from 'types/hierarchy'
+import { ScopeElement } from 'types'
 
 const getMedicationTypeLabel = (type: CriteriaType) => {
   switch (type) {
@@ -61,8 +63,8 @@ const getLabelFromCriteriaObject = (
   }
 }
 
-const getLabelFromName = (values: ScopeTreeRow[]) => {
-  const labels = values.map((value) => value.name).join(' - ')
+const getLabelFromName = (values: Hierarchy<ScopeElement, string>[]) => {
+  const labels = values.map((value) => `${value.source_value} - ${value.name}`).join(' - ')
   return labels
 }
 

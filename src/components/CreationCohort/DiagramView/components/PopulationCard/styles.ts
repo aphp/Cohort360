@@ -1,16 +1,12 @@
 import { makeStyles } from 'tss-react/mui'
 import { Theme } from '@mui/material/styles'
-import { PopulationCardPropsType } from './PopulationCard'
 
-const useStyles = makeStyles<PopulationCardPropsType>()((theme: Theme, params) => ({
+const useStyles = makeStyles()((theme: Theme) => ({
   populationCard: {
     borderRadius: 4,
     backgroundColor: '#FFFFFF',
     padding: '8px 16px',
-    border: params.form ? '1px solid #D0D7D8' : '3px solid #D3DEE8',
-    '&:hover': {
-      borderColor: params.form ? 'rgb(21,61,138)' : ''
-    },
+    border: '3px solid #D3DEE8',
     flex: 1,
     position: 'relative'
   },
@@ -18,12 +14,12 @@ const useStyles = makeStyles<PopulationCardPropsType>()((theme: Theme, params) =
     borderRadius: 4,
     backgroundColor: '#FFFFFF',
     padding: '8px 16px',
-    border: params.form ? '1px solid #D0D7D8' : '3px solid #D3DEE8',
+    border: '3px solid #D3DEE8',
     flex: 1,
     position: 'relative'
   },
   typography: {
-    padding: params.form ? '0px' : '0 1em',
+    padding: '0 1em',
     display: 'flex',
     alignItems: 'center'
   },
@@ -45,15 +41,6 @@ const useStyles = makeStyles<PopulationCardPropsType>()((theme: Theme, params) =
     margin: 4,
     fontSize: 11,
     fontWeight: 'bold'
-  },
-  actionButton: {
-    backgroundColor: '#19235A',
-    color: '#FFFFFF',
-    borderRadius: 25,
-    padding: '6px 12px',
-    '&:hover': {
-      backgroundColor: '#19235A'
-    }
   }
 }))
 

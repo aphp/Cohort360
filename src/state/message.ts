@@ -24,7 +24,7 @@ import {
   fetchPmsi
 } from './patient'
 import { expandPmsiElement, fetchClaim, fetchCondition, fetchProcedure, initPmsiHierarchy } from './pmsi'
-import { expandScopeElement, fetchScopesList } from './scope'
+import { fetchScopesList } from './scope'
 import { CanceledError } from 'axios'
 
 export type MessageState = null | {
@@ -246,10 +246,6 @@ const setMessageSlice = createSlice({
     builder.addCase(fetchScopesList.rejected, () => ({
       type: 'error',
       content: 'Une erreur est survenue lors de la récupération de la liste des périmètres'
-    }))
-    builder.addCase(expandScopeElement.rejected, () => ({
-      type: 'error',
-      content: 'Une erreur est survenue lors de la récupération des enfants du périmètre'
     }))
   }
 })

@@ -151,7 +151,7 @@ const Login = () => {
       .getAccessExpirations({ expiring: true })
       .then((values) => setLeftDays(values))
 
-    const practitionerPerimeters = await services.perimeters.getPerimeters()
+    const practitionerPerimeters = await services.perimeters.getRights({})
 
     if (isCustomError(practitionerPerimeters)) {
       if (practitionerPerimeters.errorType === 'fhir') {
@@ -176,9 +176,9 @@ const Login = () => {
         return setNoRights(true)
       }
     } else {
-      const nominativeGroupsIds = practitionerPerimeters
-        .filter((perimeterItem) => perimeterItem.read_access === 'DATA_NOMINATIVE')
-        .map((practitionerPerimeter) => practitionerPerimeter.perimeter.cohort_id)
+      const nominativeGroupsIds = practitionerPerimeters.results
+        .filter((perimeterItem) => perimeterItem.rights?.read_access === 'DATA_NOMINATIVE')
+        .map((practitionerPerimeter) => practitionerPerimeter.cohort_id)
         .filter((item) => item)
 
       const loginState: MeState = {

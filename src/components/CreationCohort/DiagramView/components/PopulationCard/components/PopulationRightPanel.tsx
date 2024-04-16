@@ -1,67 +1,70 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import Button from '@mui/material/Button'
 import Drawer from '@mui/material/Drawer'
 import Typography from '@mui/material/Typography'
 
-import { ScopeTreeRow, ScopeType } from 'types'
+import { ScopeElement } from 'types'
 
 import useStyles from './styles'
 import ScopeTree from 'components/ScopeTree'
+import { Grid } from '@mui/material'
+import { SourceType } from 'types/scope'
+import { Hierarchy } from 'types/hierarchy'
 
 type PopulationRightPanelProps = {
   open: boolean
   title?: string
-  executiveUnitType?: ScopeType
-  selectedPopulation: ScopeTreeRow[]
-  isAcceptEmptySelection?: boolean
-  onConfirm: (selectedPopulation: ScopeTreeRow[]) => void
+  mandatory?: boolean
+  population: Hierarchy<ScopeElement, string>[]
+  selectedPopulation: Hierarchy<ScopeElement, string>[]
+  sourceType: SourceType
+  onConfirm: (selectedPopulation: Hierarchy<ScopeElement, string>[]) => void
   onClose: () => void
 }
 
-const PopulationRightPanel: React.FC<PopulationRightPanelProps> = (props) => {
-  const { open, title, executiveUnitType, selectedPopulation, isAcceptEmptySelection, onConfirm, onClose } = props
-
+const PopulationRightPanel = ({
+  open,
+  title,
+  population,
+  selectedPopulation,
+  sourceType,
+  mandatory = false,
+  onConfirm,
+  onClose
+}: PopulationRightPanelProps) => {
   const { classes } = useStyles()
+  const [selectedCodes, setSelectedCodes] = useState<Hierarchy<ScopeElement, string>[]>([])
 
-  const [_selectedPopulation, _setSelectedPopulation] = useState<ScopeTreeRow[]>(selectedPopulation)
-  const [openPopulation, setOpenPopulations] = useState<number[]>([])
-
-  /**
-   * Render
-   */
   return (
-    <Drawer anchor="right" open={open} onClose={onClose} className={classes.drawer}>
-      <div className={classes.root}>
-        <div className={classes.drawerTitleContainer}>
-          <Typography className={classes.title}>{title ?? 'Structure hospitalière'}</Typography>
-        </div>
-        <div className={classes.drawerContentContainer}>
+    <Drawer
+      anchor="right"
+      open={open}
+      PaperProps={{ style: { overflowY: 'unset', width: '650px' } }}
+      onClose={onClose}
+      className={classes.drawer}
+    >
+      <Grid container direction="column" flexWrap="nowrap" className={classes.root}>
+        <Grid item container flexDirection="column" height="100%" flexWrap="nowrap" overflow="auto">
+          <Grid item className={classes.drawerTitleContainer} width="100%">
+            <Typography className={classes.title}>{title ?? 'Structure hospitalière'}</Typography>
+          </Grid>
           <ScopeTree
-            selectedItems={_selectedPopulation}
-            setSelectedItems={_setSelectedPopulation}
-            openPopulation={openPopulation}
-            setOpenPopulations={setOpenPopulations}
-            executiveUnitType={executiveUnitType}
+            baseTree={population}
+            selectedNodes={selectedPopulation}
+            onSelect={setSelectedCodes}
+            sourceType={sourceType}
           />
-        </div>
-
-        <div className={classes.drawerActionContainer}>
+        </Grid>
+        <Grid item className={classes.drawerActionContainer} width="100%">
           <Button onClick={onClose} variant="outlined">
             Annuler
           </Button>
-          <Button
-            disabled={
-              !isAcceptEmptySelection &&
-              (!_selectedPopulation || (_selectedPopulation && _selectedPopulation.length === 0))
-            }
-            onClick={() => onConfirm(_selectedPopulation)}
-            variant="contained"
-          >
+          <Button disabled={mandatory ? selectedCodes.length === 0 : false} onClick={() => onConfirm(selectedCodes)} variant="contained">
             Confirmer
           </Button>
-        </div>
-      </div>
+        </Grid>
+      </Grid>
     </Drawer>
   )
 }

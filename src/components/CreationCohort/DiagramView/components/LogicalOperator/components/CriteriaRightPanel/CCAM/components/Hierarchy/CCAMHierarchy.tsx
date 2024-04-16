@@ -35,6 +35,7 @@ import { findSelectedInListAndSubItems } from 'utils/cohortCreation'
 import { defaultProcedure } from '../../index'
 import { HierarchyElement, HierarchyTree } from 'types'
 import { CcamDataType } from 'types/requestCriterias'
+import { Hierarchy } from 'types/hierarchy'
 
 type ProcedureListItemProps = {
   procedureItem: HierarchyElement
@@ -130,8 +131,8 @@ const ProcedureListItem: React.FC<ProcedureListItemProps> = (props) => {
         <List component="div" disablePadding className={classes.subItemsContainer}>
           <div className={classes.subItemsContainerIndicator} />
           {subItems &&
-            subItems.map((procedureHierarchySubItem, index: number) =>
-              procedureHierarchySubItem.id === 'loading' ? (
+            subItems.map((subItem: Hierarchy<any, any>, index: number) =>
+              subItem.id === 'loading' ? (
                 <Fragment key={index}>
                   <div className={classes.subItemsIndicator} />
                   <Skeleton style={{ flex: 1, margin: '2px 32px' }} height={32} />
@@ -139,11 +140,7 @@ const ProcedureListItem: React.FC<ProcedureListItemProps> = (props) => {
               ) : (
                 <Fragment key={index}>
                   <div className={classes.subItemsIndicator} />
-                  <ProcedureListItem
-                    procedureItem={procedureHierarchySubItem}
-                    selectedItems={selectedItems}
-                    handleClick={handleClick}
-                  />
+                  <ProcedureListItem procedureItem={subItem} selectedItems={selectedItems} handleClick={handleClick} />
                 </Fragment>
               )
             )}
