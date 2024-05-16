@@ -338,7 +338,7 @@ const servicesPerimeters: IServicePerimeters = {
         let url = 'accesses/perimeters/patient-data/rights/'
         if (options.limit) url += `?limit=${options.limit}`
         if (options.ids) url += `&local_id=${options.ids}`
-        if (options.search) url += `?search=${options.search}`
+        if (options.search) url += `&search=${options.search}`
         if (options.page !== undefined && options.limit) url += `&offset=${options.page * options.limit}`
         const backendResponse = await apiBackend.get<Back_API_Response<ReadRightPerimeter>>(url, { signal: signal })
         if (backendResponse.status !== 200 || Object.keys(backendResponse.data).length === 0) return response

@@ -83,6 +83,7 @@ export const buildBranch = async <T>(
       const branch = await getBranchMissingInfo(path, codes, fetchHandler, status)
       if (branch) node = branch
     } else {
+      // mieux gérer les async, possible ralentissement
       for (const [nextKey, next] of nextPath) {
         const index = node.subItems.findIndex((elem) => elem.id === nextKey)
         const item = await buildBranch(node.subItems[index], [nextKey, next], codes, fetchHandler, status, toAdd)
@@ -117,6 +118,8 @@ export const buildHierarchy = async <T>(
   )
   const uniquePaths = getUniquePath(paths)
   const codesMap = mapHierarchyToMap(codes)
+
+  // mieux gérer les async, possible ralentissement
   for (const [key, value] of uniquePaths) {
     const index = defaultLevels.findIndex((elem) => elem.id === key)
     const branch = await buildBranch(defaultLevels[index] || null, [key, value], codesMap, fetchHandler, status, toAdd)
