@@ -60,7 +60,6 @@ export const useHierarchy = <T>(
     page: number,
     fetchSearch: (search: string, page: number) => Promise<Hierarchy<T, string>[]>
   ) => {
-    console.log('test glitch 1', searchValue)
     setLoadingStatus(LoadingStatus.FETCHING)
     const codes = searchValue ? await fetchSearch(searchValue, page) : []
     const toDisplay: Hierarchy<T, string>[] = searchValue ? codes : baseTree

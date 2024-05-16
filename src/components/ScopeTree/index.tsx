@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { useAppSelector } from 'state'
 import { LoadingStatus, ScopeTreeRow, ScopeType } from 'types'
 import SearchInput from 'components/ui/Searchbar/SearchInput'
@@ -29,6 +29,17 @@ type ScopeTreeProps = {
 const Index = ({ selectedIds, setSelectedItems, isExecutiveUnit, executiveUnitType }: ScopeTreeProps) => {
   const practitionerId = useAppSelector((state) => state.me)?.id || ''
   const { options, onChangeSearchInput, onChangePage, onChangeCount, onChangeSearchMode } = useSearchParameters()
+
+
+  useEffect(() => {
+    const fetch = async () => {
+    const response = isExecutiveUnit
+      ? await servicesPerimeters.getPerimeters({ practitionerId, limit: -1 })
+      : await servicesPerimeters.getRights({ practitionerId, limit: -1 })
+      console.log("test all", response)
+    }
+    fetch()
+  }, [])
 
   const fetchBaseTree = useCallback(async () => {
     const response = isExecutiveUnit
@@ -77,10 +88,7 @@ const Index = ({ selectedIds, setSelectedItems, isExecutiveUnit, executiveUnitTy
         <SearchInput
           value={options.search}
           placeholder={'Rechercher'}
-          onchange={(newValue) => {
-            console.log('test handleSearch')
-            handleSearch(newValue, 0)
-          }}
+          onchange={(newValue) => handleSearch(newValue, 0)}
         />
       </Grid>
 
