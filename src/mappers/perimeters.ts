@@ -12,7 +12,7 @@ export const scopeLevelsToRequestParam = (sourceType: SourceType) => {
   ]
   for (const element of allLevels) {
     levels.push(element)
-    if (element.toString() === sourceType) break
+    if (element.toString() === sourceType.toString()) break
   }
   return levels.join(',')
 }
