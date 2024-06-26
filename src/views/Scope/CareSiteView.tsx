@@ -34,7 +34,7 @@ const CareSiteView = () => {
       className={cx(classes.appBar, {
         [classes.appBarShift]: open
       })}
-      style={{ height: '100%', overflow: 'scroll' }}
+      style={{ height: '100%'}}
     >
       <Grid container justifyContent="center" alignItems="center">
         <Grid container item xs={11} direction="column">

@@ -1,5 +1,5 @@
 import { SelectedStatus } from 'types'
-import { Hierarchy, InfiniteMap, NodeValidity } from 'types/hierarchy'
+import { Hierarchy, InfiniteMap, Mode, NodeValidity } from 'types/hierarchy'
 import { arrayToMap } from './arrays'
 
 const mapInfiniteMapToList = (map: InfiniteMap): string[] => {
@@ -44,31 +44,30 @@ const validNodes = <T>(nodes: Hierarchy<T, string>[], status: NodeValidity) => {
   return nodes.map((node) => ({ ...node, validity: status }))
 }
 
-// CODES QUI NE SONT PAS RECHERCHES
-// car ils sont dans le cache AllCodes mais en fait leurs enfants n'avaient pas été cherchés
 export const getMissingCodes = async <T>(
   baseTree: Hierarchy<T, string>[],
   prevCodes: Map<string, Hierarchy<T, string>>,
   newCodes: Hierarchy<T, string>[],
+  mode: Mode,
   fetchHandler: (ids: string) => Promise<Hierarchy<T, string>[]>
 ) => {
   const newCodesMap = mapHierarchyToMap(validNodes(newCodes, NodeValidity.VALID))
-  const parentsCodes = getAboveLevels(newCodes, baseTree)
-  const childrenCodes = getInferiorLevels(newCodes)
   let allCodes = new Map([...prevCodes, ...newCodesMap])
-  let missingIds = getMissingIds(allCodes, arrayToMap([...parentsCodes, ...childrenCodes], null))
-  // console.log('test missingIds', missingIds)
+  let missingIds: string[] = []
+  if (mode === Mode.EXPAND) missingIds = getMissingIds(allCodes, arrayToMap(getInferiorLevels(newCodes), null))
+  else missingIds = getMissingIds(allCodes, arrayToMap(getAboveLevels(newCodes, baseTree), null))
   if (missingIds.length) {
-    // if (missingIds.includes('18042109753')) console.log("test parisSaclay")
     const ids = missingIds.join(',')
-    const parentsResponse = await fetchHandler(ids)
-    allCodes = addAllFetchedIds(allCodes, parentsResponse, missingIds)
-    const childrenCodes = getInferiorLevels(parentsResponse.filter((item) => parentsCodes.includes(item.id)))
-    missingIds = getMissingIds(allCodes, arrayToMap([...childrenCodes], null))
-    if (missingIds.length) {
-      const ids = missingIds.join(',')
-      const childrenResponse = await fetchHandler(ids)
-      allCodes = addAllFetchedIds(allCodes, childrenResponse, missingIds)
+    const fetched = await fetchHandler(ids)
+    allCodes = addAllFetchedIds(allCodes, fetched, missingIds)
+    if (mode !== Mode.EXPAND) {
+      const childrenCodes = getInferiorLevels(fetched.filter((item) => missingIds.includes(item.id)))
+      missingIds = getMissingIds(allCodes, arrayToMap([...childrenCodes], null))
+      if (missingIds.length) {
+        const ids = missingIds.join(',')
+        const childrenResponse = await fetchHandler(ids)
+        allCodes = addAllFetchedIds(allCodes, childrenResponse, missingIds)
+      }
     }
   }
   return allCodes
@@ -101,38 +100,47 @@ const getMissingSubItems = <T>(node: Hierarchy<T, string>, codes: Map<string, Hi
 export const buildHierarchy = <T>(
   baseTree: Hierarchy<T, string>[],
   endCodes: Hierarchy<T, string>[],
-  allCodes: Map<string, Hierarchy<T, string>>
+  codes: Map<string, Hierarchy<T, string>>,
+  selected: Hierarchy<T, string>[],
+  mode: Mode
 ) => {
   const buildBranch = <T>(
     node: Hierarchy<T, string>,
     path: [string, InfiniteMap],
     codes: Map<string, Hierarchy<T, string>>,
-    status: SelectedStatus
+    selected: Map<string, Hierarchy<T, string>>,
+    mode: Mode
   ) => {
     const [key, nextPath] = path
     const code = codes.get(key) || null
     node = getMissingNode(code, node)
     node.subItems = getMissingSubItems(node, codes)
+    if (mode === Mode.SEARCH && selected.get(key)) updateBranchStatus(node, node.status)
     if (nextPath.size) {
       for (const [nextKey, nextValue] of nextPath) {
         if (node.subItems) {
           const index = node.subItems.findIndex((elem) => elem.id === nextKey)
           if (index > -1) {
-            const item = buildBranch(node.subItems[index], [nextKey, nextValue], codes, status)
+            const item = buildBranch(node.subItems[index], [nextKey, nextValue], codes, selected, mode)
             node.subItems[index] = item
           }
         }
       }
+      node.status = getItemSelectedStatus(node)
+    } else {
+      if (mode === Mode.SELECT || mode === Mode.SELECT_ALL) node.status = SelectedStatus.SELECTED
+      if (mode === Mode.UNSELECT || mode === Mode.UNSELECT_ALL) node.status = SelectedStatus.NOT_SELECTED
+      if (mode !== Mode.SEARCH) updateBranchStatus(node, node.status)
     }
     return node
   }
 
-  const paths = getPaths(baseTree, endCodes, false)
+  const paths = getPaths(baseTree, endCodes, mode === Mode.UNSELECT_ALL || mode === Mode.SELECT_ALL)
   const uniquePaths = getUniquePath(paths)
-  //console.log('test paths', uniquePaths)
+  if (mode === Mode.INIT) baseTree = []
   for (let [key, value] of uniquePaths) {
     const index = baseTree.findIndex((elem) => elem.id === key)
-    const branch = buildBranch(baseTree[index] || null, [key, value], allCodes, SelectedStatus.NOT_SELECTED)
+    const branch = buildBranch(baseTree[index] || null, [key, value], codes, mapHierarchyToMap(selected), mode)
     if (branch) index > -1 ? (baseTree[index] = branch) : baseTree.push(branch)
   }
   return [...baseTree]
@@ -146,45 +154,6 @@ export const getHierarchyDisplay = <T>(defaultLevels: Hierarchy<T, string>[], tr
       return findBranch(path, tree) || { id: 'notFound' }
     })
   return branches
-}
-
-export const updateHierarchyStatus = <T>(
-  tree: Hierarchy<T, string>[],
-  endCodes: Hierarchy<T, string>[],
-  status?: SelectedStatus,
-  selectAll = false
-) => {
-  const updateBranchStatus = <T>(node: Hierarchy<T, string>, path: [string, InfiniteMap], status?: SelectedStatus) => {
-    const [, nextPath] = path
-    if (nextPath.size) {
-      for (const [nextKey, nextValue] of nextPath) {
-        if (node.subItems) {
-          const index = node.subItems.findIndex((elem) => elem.id === nextKey)
-          if (index > -1) {
-            const item = updateBranchStatus(node.subItems[index], [nextKey, nextValue], status)
-            node.subItems[index] = item
-          }
-        }
-      }
-      node.status = getItemSelectedStatus(node)
-     //   console.log('test last 2', node.status, node.name)
-    } else {
-      //console.log('test last', status, node.name)
-      node.status = status !== undefined ? status : node.status
-      updateInferiorLevelsStatus(node, node.status)
-    }
-    return node
-  }
-
-  const paths = getPaths(tree, endCodes, selectAll)
-  const uniquePaths = getUniquePath(paths)
-  //console.log('test path', uniquePaths)
-  for (let [key, value] of uniquePaths) {
-    const index = tree.findIndex((elem) => elem.id === key)
-    const branch = updateBranchStatus(tree[index] || null, [key, value], status)
-    if (branch) index > -1 ? (tree[index] = branch) : tree.push(branch)
-  }
-  return [...tree]
 }
 
 const findBranch = <T>(path: string[], tree: Hierarchy<T, string>[]): Hierarchy<T, string> => {
@@ -233,16 +202,11 @@ const getUniquePath = (paths: string[][]): InfiniteMap => {
   return tree
 }
 
-/*const updateBranchStatus = <T>(subItems: Hierarchy<T, string>[] | undefined, status: SelectedStatus) => {
-  if (subItems) for (const subItem of subItems) subItem.status = subItem.status || status
-  return subItems
-}*/
-
-const updateInferiorLevelsStatus = <T>(node: Hierarchy<T, string>, status: SelectedStatus | undefined) => {
-  if (node.subItems) {
+const updateBranchStatus = <T>(node: Hierarchy<T, string>, status: SelectedStatus | undefined) => {
+  if (status !== undefined && status !== SelectedStatus.INDETERMINATE && node.subItems) {
     for (const subItem of node.subItems) {
       subItem.status = status === SelectedStatus.SELECTED ? SelectedStatus.SELECTED : SelectedStatus.NOT_SELECTED
-      updateInferiorLevelsStatus(subItem, status)
+      updateBranchStatus(subItem, status)
     }
   }
   return node
@@ -268,6 +232,7 @@ export const getSelectedCodes = <T>(list: Hierarchy<T, string>[]) => {
 
 const getAboveLevelsWithRights = <T>(item: Hierarchy<T, string>, baseTree: Hierarchy<T, string>[]) => {
   const levels = (item.above_levels_ids || '').split(',')
+  if (baseTree.find((item) => item.id === levels[0])) return levels
   const ids = baseTree.map((code) => code.id)
   const startIndex = levels.findIndex((level) => ids.includes(level))
   if (startIndex > -1) return levels.slice(startIndex)

@@ -1,14 +1,8 @@
-import {
-  buildHierarchy,
-  getHierarchyDisplay,
-  getItemSelectedStatus,
-  getMissingCodes,
-  updateHierarchyStatus
-} from './../../utils/hierarchy'
+import { buildHierarchy, getHierarchyDisplay, getItemSelectedStatus, getMissingCodes } from './../../utils/hierarchy'
 import { useEffect, useState } from 'react'
 import { LoadingStatus, SelectedStatus } from 'types'
 import { getSelectedCodes } from 'utils/hierarchy'
-import { Hierarchy } from '../../types/hierarchy'
+import { Hierarchy, Mode } from '../../types/hierarchy'
 import { removeElement } from 'utils/arrays'
 
 export const useHierarchy = <T>(
@@ -33,9 +27,9 @@ export const useHierarchy = <T>(
 
   useEffect(() => {
     const init = async () => {
-      const newCodes = await getMissingCodes(baseTree, codes, [...baseTree, ...selectedCodes], fetchHandler)
-      let newTree = buildHierarchy([], [...baseTree, ...selectedCodes], newCodes)
-      if (selectedCodes.length) newTree = updateHierarchyStatus(newTree, selectedCodes, SelectedStatus.SELECTED)
+      const fetchedCodes = [...baseTree, ...selectedCodes]
+      const newCodes = await getMissingCodes(baseTree, codes, fetchedCodes, Mode.INIT, fetchHandler)
+      const newTree = buildHierarchy(baseTree, fetchedCodes, newCodes, selectedCodes, Mode.INIT)
       const newDisplay = getHierarchyDisplay(baseTree, newTree)
       setHierarchyRepresentation(newTree)
       setHierarchyDisplay(newDisplay)
@@ -52,12 +46,9 @@ export const useHierarchy = <T>(
   ) => {
     setLoadingStatus(LoadingStatus.FETCHING)
     const endCodes = searchValue ? await fetchSearch(searchValue, page) : []
-    const newCodes = searchValue ? await getMissingCodes(baseTree, codes, endCodes, fetchHandler) : codes
+    const newCodes = searchValue ? await getMissingCodes(baseTree, codes, endCodes, Mode.SEARCH, fetchHandler) : codes
     const toDisplay = searchValue ? endCodes : baseTree
-    // console.log('test codes', newCodes)
-    // console.log('test get Paul Brousse', newCodes.get('8312007309'))
-    let newTree = buildHierarchy([...hierarchyRepresentation], endCodes, newCodes)
-    newTree = updateHierarchyStatus(newTree, endCodes)
+    const newTree = buildHierarchy([...hierarchyRepresentation], endCodes, newCodes, selectedCodes, Mode.SEARCH)
     const newDisplay = getHierarchyDisplay(toDisplay, newTree)
     setHierarchyRepresentation(newTree)
     setHierarchyDisplay(newDisplay)
@@ -66,8 +57,8 @@ export const useHierarchy = <T>(
   }
 
   const select = (node: Hierarchy<T, string>, toAdd: boolean) => {
-    const status = toAdd ? SelectedStatus.SELECTED : SelectedStatus.NOT_SELECTED
-    const newTree = updateHierarchyStatus(hierarchyRepresentation, [node], status)
+    const mode = toAdd ? Mode.SELECT : Mode.UNSELECT
+    const newTree = buildHierarchy(hierarchyRepresentation, [node], codes, selectedCodes, mode)
     const newDisplay = getHierarchyDisplay(hierarchyDisplay, newTree)
     const newSelectedCodes = getSelectedCodes(newTree)
     setHierarchyRepresentation(newTree)
@@ -76,18 +67,18 @@ export const useHierarchy = <T>(
   }
 
   const selectAll = (toAdd: boolean) => {
-    const status = toAdd ? SelectedStatus.SELECTED : SelectedStatus.NOT_SELECTED
-    const newTree = updateHierarchyStatus(hierarchyRepresentation, hierarchyDisplay, status, true)
+    const mode = toAdd ? Mode.SELECT_ALL : Mode.UNSELECT_ALL
+    const newTree = buildHierarchy(hierarchyRepresentation, hierarchyDisplay, codes, selectedCodes, mode)
     const newDisplay = getHierarchyDisplay(hierarchyDisplay, newTree)
-    const selectedCodes = getSelectedCodes(newTree)
+    const newSelectedCodes = getSelectedCodes(newTree)
     setHierarchyRepresentation(newTree)
     setHierarchyDisplay(newDisplay)
-    setSelectedCodes(selectedCodes)
+    setSelectedCodes(newSelectedCodes)
   }
 
   const deleteCode = (node: Hierarchy<T, string>) => {
     const newCodes = removeElement(node, selectedCodes)
-    const newTree = updateHierarchyStatus(hierarchyRepresentation, [node], SelectedStatus.NOT_SELECTED)
+    const newTree = buildHierarchy(hierarchyRepresentation, [node], codes, selectedCodes, Mode.UNSELECT)
     const newDisplay = getHierarchyDisplay(hierarchyDisplay, newTree)
     setHierarchyRepresentation(newTree)
     setHierarchyDisplay(newDisplay)
@@ -95,11 +86,8 @@ export const useHierarchy = <T>(
   }
 
   const expand = async (node: Hierarchy<T, string>) => {
-    console.log("test expand")
-    const status = node.status ? node.status : SelectedStatus.NOT_SELECTED
-    const newCodes = await getMissingCodes(baseTree, codes, [node], fetchHandler)
-    let newTree = buildHierarchy(hierarchyRepresentation, [node], newCodes)
-    newTree = updateHierarchyStatus(newTree, [node], status)
+    const newCodes = await getMissingCodes(baseTree, codes, [node], Mode.EXPAND, fetchHandler)
+    const newTree = buildHierarchy(hierarchyRepresentation, [node], newCodes, selectedCodes, Mode.EXPAND)
     const newDisplay = getHierarchyDisplay(hierarchyDisplay, newTree)
     setCodes(newCodes)
     setHierarchyRepresentation(newTree)

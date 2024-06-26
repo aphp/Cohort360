@@ -5,6 +5,16 @@ export enum NodeValidity {
   VALID
 }
 
+export enum Mode {
+  EXPAND,
+  SEARCH,
+  INIT,
+  SELECT,
+  UNSELECT,
+  SELECT_ALL,
+  UNSELECT_ALL
+}
+
 export type Hierarchy<T, S> = T & {
   id: S
   above_levels_ids: string

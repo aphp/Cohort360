@@ -33,10 +33,9 @@ const ScopeTreeItem = ({ item, path, searchMode, onSelect, onExpand }: Hierarchy
   const { id, name, subItems, status, source_value, cohort_size, full_path } = item
   const canExpand =
     !subItems || (subItems.length > -1 && !subItems.every((subItem) => subItem.validity === NodeValidity.NOT_VALID))
-  const canSearch = open === true && !subItems
 
   useEffect(() => {
-    /*if (canSearch)*/ onExpand(item)
+    if (open) onExpand(item)
   }, [open])
 
   return (
