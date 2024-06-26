@@ -371,7 +371,7 @@ export type CriteriaItemType = {
 
 type FetchFunctionVariant =
   | (() => Promise<SimpleCodeType[]>)
-  | ((searchValue?: string, noStar?: boolean, signal?: AbortSignal) =>  Promise<Hierarchy<any, any>[]>)
+  | ((searchValue?: string, noStar?: boolean, signal?: AbortSignal) => Promise<Hierarchy<any, any>[]>)
 
 export type ValueSet = {
   code: string
@@ -789,11 +789,6 @@ export type UserAccesses = {
   role: {
     right_full_admin: boolean
   }
-}
-
-export type ScopeListType = {
-  perimeters: Hierarchy<ScopeElement, string>[]
-  executiveUnits: Hierarchy<ScopeElement, string>[]
 }
 
 export type CustomError = {

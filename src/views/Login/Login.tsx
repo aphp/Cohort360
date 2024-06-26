@@ -45,6 +45,7 @@ import { getDaysLeft } from 'utils/formatDate'
 import { isCustomError } from 'utils/perimeters'
 import { AccessExpiration, User } from 'types'
 import { isAxiosError } from 'axios'
+import { saveRights } from 'state/scope'
 
 type ErrorSnackBarAlertProps = {
   open?: boolean
@@ -195,7 +196,7 @@ const Login = () => {
       }
 
       dispatch(loginAction(loginState))
-
+      dispatch(saveRights({ rights: practitionerPerimeters.results }))
       const oldPath = localStorage.getItem('old-path')
       localStorage.removeItem('old-path')
       navigate(oldPath ?? '/home')

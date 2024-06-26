@@ -1,63 +1,19 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import { RootState } from 'state'
+import { createSlice } from '@reduxjs/toolkit'
 import { impersonate, login, logout } from './me'
-import services from 'services/aphp'
-import { ScopeListType } from 'types'
-import { SourceValue } from 'types/scope'
+import { ScopeElement } from 'types'
+import { Hierarchy } from 'types/hierarchy'
 
 export type ScopeState = {
-  loading: boolean
-  scopesList: ScopeListType
+  rights: Hierarchy<ScopeElement, string>[]
+  codes: Hierarchy<ScopeElement, string>[]
   openPopulation: number[]
-  aborted?: boolean
 }
 
-const initialScopeList: ScopeListType = {
-  perimeters: [],
-  executiveUnits: []
-}
 const defaultInitialState: ScopeState = {
-  loading: false,
-  scopesList: initialScopeList,
-  openPopulation: [],
-  aborted: false
+  rights: [],
+  codes: [],
+  openPopulation: []
 }
-
-type FetchScopeListReturn = {
-  scopesList: ScopeListType
-  aborted?: boolean
-}
-
-type FetchScopeListArgs = {
-  isScopeList?: boolean
-  type?: SourceValue
-  isExecutiveUnit?: boolean
-  signal?: AbortSignal | undefined
-}
-
-const fetchScopesList = createAsyncThunk<FetchScopeListReturn, FetchScopeListArgs, { state: RootState }>(
-  'scope/fetchScopesList',
-  async ({ signal }, { getState }) => {
-    try {
-      const { me, scope } = getState()
-      let perimeters = scope.scopesList.perimeters
-      if (!perimeters.length) {
-        if (!me) return { scopesList: initialScopeList, aborted: signal?.aborted }
-        perimeters = (await services.perimeters.getRights({ practitionerId: me.id }, signal)).results
-      }
-      return {
-        scopesList: {
-          perimeters,
-          executiveUnits: []
-        },
-        aborted: signal?.aborted
-      }
-    } catch (error) {
-      console.error(error)
-      throw error
-    }
-  }
-)
 
 const scopeSlice = createSlice({
   name: 'scope',
@@ -68,22 +24,26 @@ const scopeSlice = createSlice({
         ...state,
         openPopulation: []
       }
+    },
+    saveRights: (state, action) => {
+      return {
+        ...state,
+        rights: action.payload.rights
+      }
+    },
+    saveFetchedCodes: (state, action) => {
+      return {
+        ...state,
+        codes: action.payload
+      }
     }
   },
   extraReducers: (builder) => {
     builder.addCase(login, () => defaultInitialState)
     builder.addCase(logout.fulfilled, () => defaultInitialState)
     builder.addCase(impersonate, () => defaultInitialState)
-    builder.addCase(fetchScopesList.pending, (state) => ({ ...state, loading: true }))
-    builder.addCase(fetchScopesList.fulfilled, (state, action) => ({
-      ...state,
-      loading: false,
-      scopesList: action.payload.scopesList
-    }))
-    builder.addCase(fetchScopesList.rejected, (state) => ({ ...state, loading: false }))
   }
 })
 
 export default scopeSlice.reducer
-export { fetchScopesList }
-export const { closeAllOpenedPopulation } = scopeSlice.actions
+export const { closeAllOpenedPopulation, saveRights, saveFetchedCodes } = scopeSlice.actions

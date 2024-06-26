@@ -21,9 +21,7 @@ const DiagramView = () => {
   const { classes } = useStyles()
   const dispatch = useAppDispatch()
   const { selectedPopulation = [], ...requestState } = useAppSelector((state) => state.cohortCreation.request || {})
-  const {
-    scopesList: { perimeters }
-  } = useAppSelector((state) => state.scope || {})
+  const { rights } = useAppSelector((state) => state.scope || {})
   const maintenanceIsActive = useAppSelector((state) => state.me?.maintenance?.active || false)
   const [openDrawer, setOpenDrawer] = useState(false)
   const [rightsError, setRightsError] = useState(false)
@@ -51,9 +49,9 @@ const DiagramView = () => {
   }, [selectedPopulation])
 
   useEffect(() => {
-    if ((!selectedPopulation || !selectedPopulation.length) && perimeters.length === 1)
-      dispatch(buildCohortCreation({ selectedPopulation: perimeters }))
-  }, [selectedPopulation, perimeters])
+    if ((!selectedPopulation || !selectedPopulation.length) && rights.length === 1)
+      dispatch(buildCohortCreation({ selectedPopulation: rights }))
+  }, [selectedPopulation, rights])
 
   return (
     <Grid container className={classes.root}>
@@ -75,7 +73,7 @@ const DiagramView = () => {
               population={selectedPopulation}
             />
           )}
-          {(!selectedPopulation || !selectedPopulation.length) && perimeters.length > 1 && (
+          {(!selectedPopulation || !selectedPopulation.length) && rights.length > 1 && (
             <Button className={classes.actionButton} onClick={() => setOpenDrawer(true)}>
               Choisir une population source
             </Button>
@@ -86,7 +84,7 @@ const DiagramView = () => {
       </div>
       <PopulationRightPanel
         open={openDrawer}
-        population={perimeters}
+        population={rights}
         selectedPopulation={selectedCodes}
         sourceType={SourceType.ALL}
         onConfirm={handleChangePopulation}

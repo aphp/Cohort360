@@ -14,7 +14,7 @@ const CareSiteView = () => {
   const { classes, cx } = useStyles()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const population = useAppSelector((state) => state.scope.scopesList.perimeters)
+  const population = useAppSelector((state) => state.scope.rights)
   const [selectedCodes, setSelectedCodes] = useState<Hierarchy<ScopeElement, string>[]>([])
   const open = useAppSelector((state) => state.drawer)
 
@@ -34,7 +34,7 @@ const CareSiteView = () => {
       className={cx(classes.appBar, {
         [classes.appBarShift]: open
       })}
-      style={{ height: '100%'}}
+      style={{ height: '100%' }}
     >
       <Grid container justifyContent="center" alignItems="center">
         <Grid container item xs={11} direction="column">
