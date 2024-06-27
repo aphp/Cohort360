@@ -1,5 +1,11 @@
-import { buildHierarchy, getHierarchyDisplay, getItemSelectedStatus, getMissingCodes } from './../../utils/hierarchy'
-import { useEffect, useState } from 'react'
+import {
+  buildHierarchy,
+  getHierarchyDisplay,
+  getItemSelectedStatus,
+  getMissingCodes,
+  mapHierarchyToMap
+} from './../../utils/hierarchy'
+import { useEffect, useRef, useState } from 'react'
 import { LoadingStatus, SelectedStatus } from 'types'
 import { getSelectedCodes } from 'utils/hierarchy'
 import { Hierarchy, Mode } from '../../types/hierarchy'
@@ -8,14 +14,26 @@ import { removeElement } from 'utils/arrays'
 export const useHierarchy = <T>(
   baseTree: Hierarchy<T, string>[],
   selectedNodes: Hierarchy<T, string>[],
+  _codes: Hierarchy<T, string>[],
+  useMemo: (codes: Hierarchy<T, string>[]) => void,
   fetchHandler: (ids: string) => Promise<Hierarchy<T, string>[]>
 ) => {
   const [hierarchyRepresentation, setHierarchyRepresentation] = useState<Hierarchy<T, string>[]>([])
   const [hierarchyDisplay, setHierarchyDisplay] = useState<Hierarchy<T, string>[]>([])
   const [selectedCodes, setSelectedCodes] = useState<Hierarchy<T, string>[]>(selectedNodes)
-  const [codes, setCodes] = useState<Map<string, Hierarchy<T, string>>>(new Map())
+  const [codes, setCodes] = useState<Map<string, Hierarchy<T, string>>>(
+    mapHierarchyToMap(_codes.map((code) => ({ ...code, subItems: undefined })))
+  )
+  const latestCodes = useRef(codes)
   const [loadingStatus, setLoadingStatus] = useState(LoadingStatus.FETCHING)
   const [selectAllStatus, setSelectAllStatus] = useState(SelectedStatus.NOT_SELECTED)
+  useEffect(() => {
+    latestCodes.current = codes
+  }, [codes])
+
+  useEffect(() => {
+    return () => useMemo(Array.from(latestCodes.current.values()))
+  }, [])
 
   useEffect(() => {
     if (hierarchyDisplay.length) {
@@ -31,9 +49,9 @@ export const useHierarchy = <T>(
       const newCodes = await getMissingCodes(baseTree, codes, fetchedCodes, Mode.INIT, fetchHandler)
       const newTree = buildHierarchy(baseTree, fetchedCodes, newCodes, selectedCodes, Mode.INIT)
       const newDisplay = getHierarchyDisplay(baseTree, newTree)
+      setCodes(newCodes)
       setHierarchyRepresentation(newTree)
       setHierarchyDisplay(newDisplay)
-      setCodes(newCodes)
       setLoadingStatus(LoadingStatus.SUCCESS)
     }
     init()
@@ -48,11 +66,11 @@ export const useHierarchy = <T>(
     const endCodes = searchValue ? await fetchSearch(searchValue, page) : []
     const newCodes = searchValue ? await getMissingCodes(baseTree, codes, endCodes, Mode.SEARCH, fetchHandler) : codes
     const toDisplay = searchValue ? endCodes : baseTree
-    const newTree = buildHierarchy([...hierarchyRepresentation], endCodes, newCodes, selectedCodes, Mode.SEARCH)
+    const newTree = buildHierarchy(hierarchyRepresentation, endCodes, newCodes, selectedCodes, Mode.SEARCH)
     const newDisplay = getHierarchyDisplay(toDisplay, newTree)
+    setCodes(newCodes)
     setHierarchyRepresentation(newTree)
     setHierarchyDisplay(newDisplay)
-    setCodes(newCodes)
     setLoadingStatus(LoadingStatus.SUCCESS)
   }
 

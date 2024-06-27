@@ -28,13 +28,13 @@ const scopeSlice = createSlice({
     saveRights: (state, action) => {
       return {
         ...state,
-        rights: action.payload.rights
+        rights: action.payload.rights || []
       }
     },
     saveFetchedCodes: (state, action) => {
       return {
         ...state,
-        codes: action.payload
+        codes: action.payload || []
       }
     }
   },

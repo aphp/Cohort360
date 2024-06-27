@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect } from 'react'
-import { useAppSelector } from 'state'
+import { useAppDispatch, useAppSelector } from 'state'
 import { LoadingStatus, ScopeElement } from 'types'
 import SearchInput from 'components/ui/Searchbar/SearchInput'
 import {
@@ -19,6 +19,7 @@ import { useSearchParameters } from 'hooks/useSearchParameters'
 import { SourceType } from 'types/scope'
 import { Hierarchy } from 'types/hierarchy'
 import ScopeTree from './ScopeTree'
+import { saveFetchedCodes } from 'state/scope'
 
 type ScopeTreeProps = {
   baseTree: Hierarchy<ScopeElement, string>[]
@@ -29,8 +30,9 @@ type ScopeTreeProps = {
 
 const Index = ({ baseTree, selectedNodes, sourceType, onSelect }: ScopeTreeProps) => {
   const practitionerId = useAppSelector((state) => state.me)?.id || ''
+  const codes = useAppSelector((state) => state.scope.codes) || []
+  const dispatch = useAppDispatch()
   const { options, onChangeSearchInput, onChangePage, onChangeCount, onChangeSearchMode } = useSearchParameters()
-
   const fetchChildren = useCallback(
     async (ids: string) => {
       const { results } =
@@ -54,8 +56,12 @@ const Index = ({ baseTree, selectedNodes, sourceType, onSelect }: ScopeTreeProps
     [practitionerId, sourceType]
   )
 
+  const handleFetchCodes = useCallback((codes: Hierarchy<ScopeElement, string>[]) => {
+    dispatch(saveFetchedCodes(codes))
+  }, [])
+
   const { hierarchy, selectedCodes, loadingStatus, selectAllStatus, search, expand, select, selectAll, deleteCode } =
-    useHierarchy(baseTree, selectedNodes, fetchChildren)
+    useHierarchy(baseTree, selectedNodes, codes, handleFetchCodes, fetchChildren)
 
   const handleSearch = (searchValue: string, page: number) => {
     if (searchValue === '') onChangeCount(baseTree.length)
