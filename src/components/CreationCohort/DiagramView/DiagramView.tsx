@@ -4,10 +4,7 @@ import { Alert, Button, Grid } from '@mui/material'
 import LogicalOperator from './components/LogicalOperator/LogicalOperator'
 import TemporalConstraintCard from './components/TemporalConstraintCard/TemporalConstraintCard'
 import CohortCreationBreadcrumbs from './components/Breadcrumbs/Breadcrumbs'
-
 import { useAppDispatch, useAppSelector } from 'state'
-
-import useStyles from './styles'
 import { Rights, SourceType } from 'types/scope'
 import { buildCohortCreation } from 'state/cohortCreation'
 import { ScopeElement } from 'types'
@@ -18,7 +15,6 @@ import ModalRightError from './components/PopulationCard/components/ModalRightEr
 import { checkNominativeCriteria, cleanNominativeCriterias } from 'utils/cohortCreation'
 
 const DiagramView = () => {
-  const { classes } = useStyles()
   const dispatch = useAppDispatch()
   const { selectedPopulation = [], ...requestState } = useAppSelector((state) => state.cohortCreation.request || {})
   const { rights } = useAppSelector((state) => state.scope || {})
@@ -54,7 +50,16 @@ const DiagramView = () => {
   }, [selectedPopulation, rights])
 
   return (
-    <Grid container className={classes.root}>
+    <Grid
+      container
+      flexDirection="column"
+      flexWrap="nowrap"
+      width="calc(100% - 300px)"
+      height="100vh"
+      padding="24px 26px 76px 26px"
+      overflow="auto"
+      marginRight="300px"
+    >
       <div style={{ minWidth: 500, paddingRight: 24 }}>
         {maintenanceIsActive && (
           <Alert severity="warning" style={{ marginTop: '-12px', width: '100%', marginBottom: '10px' }}>
@@ -64,7 +69,7 @@ const DiagramView = () => {
         )}
         <CohortCreationBreadcrumbs />
 
-        <Grid className={classes.populationContainer}>
+        <Grid container justifyContent="center">
           {selectedPopulation && selectedPopulation.length > 0 && (
             <PopulationCard
               onEditDisabled={maintenanceIsActive}
@@ -74,7 +79,11 @@ const DiagramView = () => {
             />
           )}
           {(!selectedPopulation || !selectedPopulation.length) && rights.length > 1 && (
-            <Button className={classes.actionButton} onClick={() => setOpenDrawer(true)}>
+            <Button
+              variant="contained"
+              sx={{ borderRadius: 25, background: '#19235A' }}
+              onClick={() => setOpenDrawer(true)}
+            >
               Choisir une population source
             </Button>
           )}

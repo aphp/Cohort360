@@ -1,6 +1,6 @@
 import { SelectedStatus } from 'types'
 import { Hierarchy, InfiniteMap, Mode, NodeValidity } from 'types/hierarchy'
-import { arrayToMap } from './arrays'
+import { arrayToMap, sort } from './arrays'
 
 const mapInfiniteMapToList = (map: InfiniteMap): string[] => {
   let allValues: string[] = []

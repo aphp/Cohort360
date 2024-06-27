@@ -25,7 +25,10 @@ export const useHierarchy = <T>(
     mapHierarchyToMap(_codes.map((code) => ({ ...code, subItems: undefined })))
   )
   const latestCodes = useRef(codes)
-  const [loadingStatus, setLoadingStatus] = useState(LoadingStatus.FETCHING)
+  const [loadingStatus, setLoadingStatus] = useState({
+    search: LoadingStatus.FETCHING,
+    expand: LoadingStatus.SUCCESS
+  })
   const [selectAllStatus, setSelectAllStatus] = useState(SelectedStatus.NOT_SELECTED)
   useEffect(() => {
     latestCodes.current = codes
@@ -52,7 +55,7 @@ export const useHierarchy = <T>(
       setCodes(newCodes)
       setHierarchyRepresentation(newTree)
       setHierarchyDisplay(newDisplay)
-      setLoadingStatus(LoadingStatus.SUCCESS)
+      setLoadingStatus({ ...loadingStatus, search: LoadingStatus.SUCCESS })
     }
     init()
   }, [])
@@ -62,7 +65,7 @@ export const useHierarchy = <T>(
     page: number,
     fetchSearch: (search: string, page: number) => Promise<Hierarchy<T, string>[]>
   ) => {
-    setLoadingStatus(LoadingStatus.FETCHING)
+    setLoadingStatus({ ...loadingStatus, search: LoadingStatus.FETCHING })
     const endCodes = searchValue ? await fetchSearch(searchValue, page) : []
     const newCodes = searchValue ? await getMissingCodes(baseTree, codes, endCodes, Mode.SEARCH, fetchHandler) : codes
     const toDisplay = searchValue ? endCodes : baseTree
@@ -71,7 +74,7 @@ export const useHierarchy = <T>(
     setCodes(newCodes)
     setHierarchyRepresentation(newTree)
     setHierarchyDisplay(newDisplay)
-    setLoadingStatus(LoadingStatus.SUCCESS)
+    setLoadingStatus({ ...loadingStatus, search: LoadingStatus.SUCCESS })
   }
 
   const select = (node: Hierarchy<T, string>, toAdd: boolean) => {
@@ -104,12 +107,14 @@ export const useHierarchy = <T>(
   }
 
   const expand = async (node: Hierarchy<T, string>) => {
+    setLoadingStatus({ ...loadingStatus, expand: LoadingStatus.FETCHING })
     const newCodes = await getMissingCodes(baseTree, codes, [node], Mode.EXPAND, fetchHandler)
     const newTree = buildHierarchy(hierarchyRepresentation, [node], newCodes, selectedCodes, Mode.EXPAND)
     const newDisplay = getHierarchyDisplay(hierarchyDisplay, newTree)
     setCodes(newCodes)
     setHierarchyRepresentation(newTree)
     setHierarchyDisplay(newDisplay)
+    setLoadingStatus({ ...loadingStatus, search: LoadingStatus.SUCCESS })
   }
 
   return {

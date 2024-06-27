@@ -1,17 +1,8 @@
 import React, { useCallback, useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from 'state'
-import { LoadingStatus, ScopeElement } from 'types'
+import { ScopeElement } from 'types'
 import SearchInput from 'components/ui/Searchbar/SearchInput'
-import {
-  CircularProgress,
-  Grid,
-  Pagination,
-  Paper,
-  TableCell,
-  TableContainer,
-  TableRow,
-  Typography
-} from '@mui/material'
+import { Grid, Pagination, Paper } from '@mui/material'
 import { useHierarchy } from '../../hooks/hierarchy/useHierarchy'
 import servicesPerimeters from '../../services/aphp/servicePerimeters'
 import SelectedCodes from './SelectedCodes'
@@ -91,59 +82,40 @@ const Index = ({ baseTree, selectedNodes, sourceType, onSelect }: ScopeTreeProps
       </Grid>
 
       <Grid container direction="column" wrap="wrap" height="100%" overflow="auto">
-        {loadingStatus === LoadingStatus.SUCCESS && baseTree.length && (
-          <Grid
-            item
-            container
-            direction="column"
-            justifyContent="space-between"
-            wrap="nowrap"
-            height="100%"
-            style={{ overflowX: 'auto' }}
-          >
-            <TableContainer component={Paper} style={{ overflowX: 'hidden' }}>
-              <ScopeTree
-                selectAllStatus={selectAllStatus}
-                sourceType={SourceType.ALL}
-                searchMode={options.searchMode}
-                hierarchy={hierarchy}
-                onExpand={expand}
-                onSelect={select}
-                onSelectAll={selectAll}
-              />
-
-              <>
-                {loadingStatus === LoadingStatus.SUCCESS && !hierarchy.length && (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">
-                      <Typography>Aucun résultat à afficher</Typography>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </>
-            </TableContainer>
-            {options.totalPages > 1 && (
-              <Grid item alignSelf="bottom">
-                <Paper elevation={5}>
-                  <Grid item container justifyContent="center" style={{ padding: '10px 40px' }}>
-                    <Pagination
-                      count={options.totalPages || 1}
-                      color="primary"
-                      onChange={(event, page: number) => handleSearch(options.search, page - 1)}
-                      page={options.page + 1}
-                    />
-                  </Grid>
-                </Paper>
-              </Grid>
-            )}
-          </Grid>
-        )}
-
-        {loadingStatus === LoadingStatus.FETCHING && (
-          <Grid container justifyContent="center" alignContent="center" height={500}>
-            <CircularProgress />
-          </Grid>
-        )}
+        <Grid
+          item
+          container
+          direction="column"
+          justifyContent="space-between"
+          wrap="nowrap"
+          height="100%"
+          style={{ overflowX: 'auto' }}
+        >
+          <ScopeTree
+            loading={loadingStatus}
+            selectAllStatus={selectAllStatus}
+            sourceType={SourceType.ALL}
+            searchMode={options.searchMode}
+            hierarchy={hierarchy}
+            onExpand={expand}
+            onSelect={select}
+            onSelectAll={selectAll}
+          />
+          {options.totalPages > 1 && (
+            <Grid item alignSelf="bottom">
+              <Paper elevation={5}>
+                <Grid item container justifyContent="center" style={{ padding: '10px 40px' }}>
+                  <Pagination
+                    count={options.totalPages || 1}
+                    color="primary"
+                    onChange={(event, page: number) => handleSearch(options.search, page - 1)}
+                    page={options.page + 1}
+                  />
+                </Grid>
+              </Paper>
+            </Grid>
+          )}
+        </Grid>
       </Grid>
     </Grid>
   )

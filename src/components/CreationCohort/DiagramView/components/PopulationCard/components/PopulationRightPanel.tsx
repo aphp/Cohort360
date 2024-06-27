@@ -1,14 +1,7 @@
-import React, { useEffect, useState } from 'react'
-
-import Button from '@mui/material/Button'
-import Drawer from '@mui/material/Drawer'
-import Typography from '@mui/material/Typography'
-
+import React, { useState } from 'react'
 import { ScopeElement } from 'types'
-
-import useStyles from './styles'
 import ScopeTree from 'components/ScopeTree'
-import { Grid } from '@mui/material'
+import { Grid, Button, Drawer, Typography } from '@mui/material'
 import { SourceType } from 'types/scope'
 import { Hierarchy } from 'types/hierarchy'
 
@@ -33,21 +26,22 @@ const PopulationRightPanel = ({
   onConfirm,
   onClose
 }: PopulationRightPanelProps) => {
-  const { classes } = useStyles()
   const [selectedCodes, setSelectedCodes] = useState<Hierarchy<ScopeElement, string>[]>([])
 
   return (
     <Drawer
       anchor="right"
       open={open}
-      PaperProps={{ style: { overflowY: 'unset', width: '650px' } }}
+      PaperProps={{ style: { width: '650px' } }}
       onClose={onClose}
-      className={classes.drawer}
+      sx={{ zIndex: 1300, overflowY: 'unset' }}
     >
-      <Grid container direction="column" flexWrap="nowrap" className={classes.root}>
+      <Grid container direction="column" maxWidth="650px" height="100%" flexWrap="nowrap">
         <Grid item container flexDirection="column" height="100%" flexWrap="nowrap" overflow="auto">
-          <Grid item className={classes.drawerTitleContainer} width="100%">
-            <Typography className={classes.title}>{title ?? 'Structure hospitalière'}</Typography>
+          <Grid container justifyContent="center" borderBottom="1px solid grey" width="100%">
+            <Typography fontSize="22px" margin="12px 0px">
+              {title ?? 'Structure hospitalière'}
+            </Typography>
           </Grid>
           <ScopeTree
             baseTree={population}
@@ -56,13 +50,28 @@ const PopulationRightPanel = ({
             sourceType={sourceType}
           />
         </Grid>
-        <Grid item className={classes.drawerActionContainer} width="100%">
-          <Button onClick={onClose} variant="outlined">
-            Annuler
-          </Button>
-          <Button disabled={mandatory ? selectedCodes.length === 0 : false} onClick={() => onConfirm(selectedCodes)} variant="contained">
-            Confirmer
-          </Button>
+        <Grid
+          container
+          item
+          alignItems="center"
+          justifyContent="center"
+          flexWrap="wrap"
+          width="100%"
+          padding="12px"
+          borderTop="1px solid grey"
+        >
+          <Grid item xs={4} container justifyContent="space-between">
+            <Button onClick={onClose} variant="outlined">
+              Annuler
+            </Button>
+            <Button
+              disabled={mandatory ? selectedCodes.length === 0 : false}
+              onClick={() => onConfirm(selectedCodes)}
+              variant="contained"
+            >
+              Confirmer
+            </Button>
+          </Grid>
         </Grid>
       </Grid>
     </Drawer>
