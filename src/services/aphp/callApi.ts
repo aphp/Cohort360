@@ -5,18 +5,17 @@ import {
   BiologyStatus,
   FHIR_API_Promise_Response,
   FHIR_API_Response,
+  FHIR_Bundle_Response,
   FHIR_Bundle_Promise_Response,
-  HierarchyElement,
-  HierarchyElementWithSystem,
-  IScope,
   Back_API_Response,
   Cohort,
   DataRights,
   CohortRights,
-  UserAccesses
+  UserAccesses,
+  ReadRightPerimeter,
+  HierarchyElementWithSystem
 } from 'types'
 
-import { FHIR_Bundle_Response } from 'types'
 import { AxiosError, AxiosResponse } from 'axios'
 import apiBackend from '../apiBackend'
 import {
@@ -66,6 +65,7 @@ import {
   QuestionnaireResponseParamsKeys
 } from '../../mappers/filters'
 import { ResourceType } from 'types/requestCriterias'
+import { Hierarchy } from 'types/hierarchy'
 
 const paramValuesReducer = (accumulator: string, currentValue: string): string =>
   accumulator ? `${accumulator},${currentValue}` : currentValue ? currentValue : accumulator
@@ -1093,15 +1093,15 @@ export type FetchValueSetOptions = {
   search?: string
   noStar?: boolean
   joinDisplayWithCode?: boolean
-  filterRoots?: (code: HierarchyElement) => boolean
-  filterOut?: (code: HierarchyElement) => boolean
+  filterRoots?: (code: Hierarchy<any, any>) => boolean
+  filterOut?: (code: Hierarchy<any, any>) => boolean
 }
 
 export const fetchValueSet = async (
   codeSystem: string,
   options?: FetchValueSetOptions,
   signal?: AbortSignal
-): Promise<Array<HierarchyElementWithSystem>> => {
+): Promise<HierarchyElementWithSystem[]> => {
   const {
     code,
     valueSetTitle,
@@ -1110,7 +1110,7 @@ export const fetchValueSet = async (
     noStar,
     joinDisplayWithCode = true,
     filterRoots = () => true,
-    filterOut = (value: HierarchyElement) => value.id === 'APHP generated'
+    filterOut = (value: Hierarchy<any, any>) => value.id === 'APHP generated'
   } = options || {}
   const codeList = await getCodeList(codeSystem, code, search, noStar, signal)
   const sortingFunc = sortingKey === 'id' ? idSort : labelSort
@@ -1122,7 +1122,7 @@ export const fetchValueSet = async (
           ? `${code.code} - ${capitalizeFirstLetter(code.display)}`
           : capitalizeFirstLetter(code.display),
         system: code.codeSystem,
-        subItems: [{ id: 'loading', label: 'loading', subItems: [] as HierarchyElement[] }]
+        subItems: [{ id: 'loading', label: 'loading', subItems: [] as Hierarchy<any, any>[] }]
       }))
       .filter((code) => !filterOut(code))
       .sort(sortingFunc) || []
@@ -1155,7 +1155,10 @@ type fetchScopeProps = {
   offset?: number
   limit?: number
 }
-export const fetchScope: (args: fetchScopeProps, signal?: AbortSignal) => Promise<AxiosResponse<IScope>> = async (
+export const fetchScope: (
+  args: fetchScopeProps,
+  signal?: AbortSignal
+) => Promise<AxiosResponse<Back_API_Response<ReadRightPerimeter>>> = async (
   args: fetchScopeProps,
   signal?: AbortSignal
 ) => {
@@ -1171,9 +1174,12 @@ export const fetchScope: (args: fetchScopeProps, signal?: AbortSignal) => Promis
   if (type && type.length > 0) options = [...options, `type_source_value=${type.join(',')}`]
 
   const url: string = isExecutiveUnit ? 'accesses/perimeters/?' : 'accesses/perimeters/patient-data/rights/?'
-  const response: AxiosResponse<IScope> = await apiBackend.get(`${url}${options.reduce(paramsReducer)}`, {
-    signal: signal
-  })
+  const response: AxiosResponse<Back_API_Response<ReadRightPerimeter>> = await apiBackend.get(
+    `${url}${options.reduce(paramsReducer)}`,
+    {
+      signal: signal
+    }
+  )
   return response
 }
 
@@ -1203,16 +1209,6 @@ export const fetchPerimeterAccesses = async (perimeter: string): Promise<AxiosRe
 
 export const fetchCohortAccesses = async (cohortIds: string[]) => {
   const response = await apiBackend.get<CohortRights[]>(`cohort/cohorts/cohort-rights/?fhir_group_id=${cohortIds}`)
-  return response
-}
-
-export const fetchPerimeterFromCohortId = async (cohortId: string) => {
-  const response = await apiBackend.get(`accesses/perimeters/?cohort_id=${cohortId}`)
-  return response
-}
-
-export const fetchPerimeterFromId = async (perimeterId: string) => {
-  const response = await apiBackend.get(`accesses/perimeters/${perimeterId}/`)
   return response
 }
 

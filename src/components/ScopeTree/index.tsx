@@ -1,112 +1,124 @@
-import React, { useState } from 'react'
-import { useAppSelector } from 'state'
-import { ScopeTreeRow, ScopeType } from 'types'
-import { getCurrentScopeList } from 'utils/scopeTree'
-import ScopeTreeChipsets from './ScopeTreeChipsets'
-import ScopeTreeExploration from './ScopeTreeExploration'
-import ScopeTreeSearch from './ScopeTreeSearch'
-import { onSelect } from './utils/scopeTreeUtils'
+import React, { useCallback, useEffect } from 'react'
+import { useAppDispatch, useAppSelector } from 'state'
+import { ScopeElement } from 'types'
 import SearchInput from 'components/ui/Searchbar/SearchInput'
-import { Grid } from '@mui/material'
+import { Grid, Pagination, Paper } from '@mui/material'
+import { useHierarchy } from '../../hooks/hierarchy/useHierarchy'
+import servicesPerimeters from '../../services/aphp/servicePerimeters'
+import SelectedCodes from './SelectedCodes'
+import { useSearchParameters } from 'hooks/useSearchParameters'
+import { SourceType } from 'types/scope'
+import { Hierarchy } from 'types/hierarchy'
+import ScopeTree from './ScopeTree'
+import { saveFetchedCodes } from 'state/scope'
 
-export type ScopeTreeSearchProps = {
-  searchInput: string
-  selectedItems: ScopeTreeRow[]
-  setSelectedItems: (selectedItems: ScopeTreeRow[]) => void
-  searchSavedRootRows: ScopeTreeRow[]
-  setSearchSavedRootRows: (selectedItems: ScopeTreeRow[]) => void
-  isSelectionLoading: boolean
-  setIsSelectionLoading: (isSelectionLoading: boolean) => void
-  executiveUnitType?: ScopeType
-}
-
-export type ScopeTreeExplorationProps = {
-  selectedItems: ScopeTreeRow[]
-  setSelectedItems: (selectedItems: ScopeTreeRow[]) => void
-  searchSavedRootRows: ScopeTreeRow[]
-  setSearchSavedRootRows: (selectedItems: ScopeTreeRow[]) => void
-  openPopulation: number[]
-  setOpenPopulations: (openPopulation: number[]) => void
-  isSelectionLoading: boolean
-  setIsSelectionLoading: (isSelectionLoading: boolean) => void
-  executiveUnitType?: ScopeType
-}
-
-type ScopeTreeExcludedProps = {
-  searchInput: string
-  searchRootRows: ScopeTreeRow[]
-  setSearchRootRows: (selectedItems: ScopeTreeRow[]) => void
-  isSelectionLoading: boolean
-  setIsSelectionLoading: (isSelectionLoading: boolean) => void
-  searchSavedRootRows: ScopeTreeRow[]
-  setSearchSavedRootRows: (selectedItems: ScopeTreeRow[]) => void
-}
 type ScopeTreeProps = {
-  [K in Exclude<
-    keyof ScopeTreeExplorationProps | keyof ScopeTreeSearchProps,
-    keyof ScopeTreeExcludedProps
-  >]: K extends keyof ScopeTreeExplorationProps
-    ? ScopeTreeExplorationProps[K]
-    : K extends keyof ScopeTreeSearchProps
-    ? ScopeTreeSearchProps[K]
-    : never
+  baseTree: Hierarchy<ScopeElement, string>[]
+  selectedNodes: Hierarchy<ScopeElement, string>[]
+  sourceType: SourceType
+  onSelect: (selectedItems: Hierarchy<ScopeElement, string>[]) => void
 }
 
-const Index = (props: ScopeTreeProps) => {
-  const { selectedItems, setSelectedItems, openPopulation, setOpenPopulations, executiveUnitType } = props
-  const scopeState = useAppSelector((state) => state.scope || {})
-  const isExecutiveUnit: boolean = !!executiveUnitType ?? false
-  const scopesList: ScopeTreeRow[] = getCurrentScopeList(scopeState.scopesList, isExecutiveUnit) ?? []
-  const [searchInput, setSearchInput] = useState('')
-  const [searchSavedRootRows, setSearchSavedRootRows] = useState<ScopeTreeRow[]>([...scopesList])
-  const [isSelectionLoading, setIsSelectionLoading] = useState<boolean>(false)
+const Index = ({ baseTree, selectedNodes, sourceType, onSelect }: ScopeTreeProps) => {
+  const practitionerId = useAppSelector((state) => state.me)?.id || ''
+  const codes = useAppSelector((state) => state.scope.codes) || []
+  const dispatch = useAppDispatch()
+  const { options, onChangeSearchInput, onChangePage, onChangeCount, onChangeSearchMode } = useSearchParameters()
+  const fetchChildren = useCallback(
+    async (ids: string) => {
+      const { results } =
+        sourceType === SourceType.ALL
+          ? await servicesPerimeters.getRights({ practitionerId, ids, limit: -1, sourceType })
+          : await servicesPerimeters.getPerimeters({ practitionerId, ids, limit: -1, sourceType })
+      return results
+    },
+    [practitionerId, sourceType]
+  )
 
-  /** cast selectedItems.id into string for comparaison
-   * TODO : Change call made by alizé to retrive caresite into filters.ts to avoid the cast
-   */
-  const fixSelectedItems = selectedItems.map((item) => ({
-    ...item,
-    id: item.id?.toString()
-  }))
+  const fetchSearch = useCallback(
+    async (search: string, page: number) => {
+      const { results, count } =
+        sourceType === SourceType.ALL
+          ? await servicesPerimeters.getRights({ practitionerId, search, page, limit: options.limit, sourceType })
+          : await servicesPerimeters.getPerimeters({ practitionerId, search, page, limit: options.limit, sourceType })
+      onChangeCount(count)
+      return results
+    },
+    [practitionerId, sourceType]
+  )
+
+  const handleFetchCodes = useCallback((codes: Hierarchy<ScopeElement, string>[]) => {
+    dispatch(saveFetchedCodes(codes))
+  }, [])
+
+  const { hierarchy, selectedCodes, loadingStatus, selectAllStatus, search, expand, select, selectAll, deleteCode } =
+    useHierarchy(baseTree, selectedNodes, codes, handleFetchCodes, fetchChildren)
+
+  const handleSearch = (searchValue: string, page: number) => {
+    if (searchValue === '') onChangeCount(baseTree.length)
+    onChangeSearchInput(searchValue)
+    onChangePage(page)
+    onChangeSearchMode(searchValue !== '')
+    search(searchValue, page, fetchSearch)
+  }
+
+  useEffect(() => {
+    onSelect(selectedCodes.map((item) => ({ ...item, subItems: [] })))
+  }, [selectedCodes])
 
   return (
-    <div>
-      <ScopeTreeChipsets
-        selectedItems={fixSelectedItems}
-        onDelete={(item) =>
-          onSelect(item, fixSelectedItems, setSelectedItems, scopesList, isSelectionLoading, setIsSelectionLoading)
-        }
-      />
-
-      <Grid style={{ width: '25%', marginLeft: '75%', marginBottom: '10px' }}>
-        <SearchInput value={searchInput} placeholder={'Rechercher'} onchange={(newValue) => setSearchInput(newValue)} />{' '}
+    <Grid container direction="column" wrap="nowrap" height="100%" overflow="hidden">
+      <Grid container padding={'20px'}>
+        <Grid container sx={{ marginBottom: '15px' }}>
+          <SearchInput
+            value={options.search}
+            placeholder={'Rechercher'}
+            onchange={(newValue) => handleSearch(newValue, 0)}
+          />
+        </Grid>
+        <Grid container>
+          <SelectedCodes values={selectedCodes} onDelete={deleteCode} />
+        </Grid>
       </Grid>
 
-      {searchInput ? (
-        <ScopeTreeSearch
-          searchInput={searchInput}
-          selectedItems={fixSelectedItems}
-          setSelectedItems={setSelectedItems}
-          searchSavedRootRows={searchSavedRootRows}
-          setSearchSavedRootRows={setSearchSavedRootRows}
-          executiveUnitType={executiveUnitType}
-          isSelectionLoading={isSelectionLoading}
-          setIsSelectionLoading={setIsSelectionLoading}
-        />
-      ) : (
-        <ScopeTreeExploration
-          selectedItems={fixSelectedItems}
-          setSelectedItems={setSelectedItems}
-          searchSavedRootRows={searchSavedRootRows}
-          setSearchSavedRootRows={setSearchSavedRootRows}
-          openPopulation={openPopulation}
-          setOpenPopulations={setOpenPopulations}
-          executiveUnitType={executiveUnitType}
-          isSelectionLoading={isSelectionLoading}
-          setIsSelectionLoading={setIsSelectionLoading}
-        />
-      )}
-    </div>
+      <Grid container direction="column" wrap="wrap" height="100%" overflow="auto">
+        <Grid
+          item
+          container
+          direction="column"
+          justifyContent="space-between"
+          wrap="nowrap"
+          height="100%"
+          style={{ overflowX: 'auto' }}
+        >
+          <ScopeTree
+            loading={loadingStatus}
+            selectAllStatus={selectAllStatus}
+            sourceType={SourceType.ALL}
+            searchMode={options.searchMode}
+            hierarchy={hierarchy}
+            onExpand={expand}
+            onSelect={select}
+            onSelectAll={selectAll}
+          />
+          {options.totalPages > 1 && (
+            <Grid item alignSelf="bottom">
+              <Paper elevation={5}>
+                <Grid item container justifyContent="center" style={{ padding: '10px 40px' }}>
+                  <Pagination
+                    count={options.totalPages || 1}
+                    color="primary"
+                    onChange={(event, page: number) => handleSearch(options.search, page - 1)}
+                    page={options.page + 1}
+                  />
+                </Grid>
+              </Paper>
+            </Grid>
+          )}
+        </Grid>
+      </Grid>
+    </Grid>
   )
 }
+
 export default Index
