@@ -1,0 +1,12 @@
+[submodule "Cohort360-Back-end"]
+	path = Cohort360-Back-end
+	url = git@github.com:aphp/Cohort360-Back-end.git
+[submodule "Cohort360-FrontEnd"]
+	path = Cohort360-FrontEnd
+	url = git@github.com:aphp/Cohort360-FrontEnd.git
+[submodule "Cohort360-AdministrationPortal"]
+	path = Cohort360-AdministrationPortal
+	url = git@github.com:aphp/Cohort360-AdministrationPortal.git
+[submodule "Cohort360-QueryExecutor"]
+	path = Cohort360-QueryExecutor
+	url = https://github.com/aphp/Cohort360-QueryExecutor
