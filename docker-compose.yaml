@@ -1,0 +1,158 @@
+services:
+  django:
+    build: ./Cohort360-Back-end
+#    image: ${BACK_IMAGE}
+    container_name: django
+    ports:
+      - ${BACK_LOCAL_PORT}:8080
+    env_file:
+      - env/django.env
+    command: ["-b", "-i"]
+    volumes:
+      - ./conf/perimeters.csv:/perimeters.csv
+      - ./scripts/django-sync-perimeters.py:/app/scripts/django-sync-perimeters.py
+    depends_on:
+      - pg-db
+      - redis
+    healthcheck:
+      test: [ "CMD-SHELL", "curl http://localhost:8000/auth/login/ | grep '<!DOCTYPE html>' > /dev/null; if [ 0 != $$? ]; then exit 1; fi;" ]
+      interval: ${HEALTHCHECK_PERIOD}
+      timeout: 5s
+      retries: 5
+    networks:
+      c360:
+
+  sjs:
+    build: ./Cohort360-QueryExecutor
+#     image: ${SJS_IMAGE}
+    container_name: sjs
+    depends_on:
+      - django
+      - fhir
+    ports:
+      - ${SJS_LOCAL_PORT}:8090
+# pour débugger en remote par exemple
+#      - 5005:5005
+    env_file:
+      - env/sjs.env
+    # healthcheck:
+    #   test: [ "CMD-SHELL", "http_proxy="" curl -d 'input.cohortDefinitionName = test,input.cohortDefinitionSyntax = "{\"sourcePopulation\":{\"caresiteCohortList\":[1]},\"_type\":\"request\",\"request\":{\"_type\":\"orGroup\",\"_id\":0,\"isInclusive\":true,\"criteria\":[]}}"' -X POST "localhost:8090/jobs?appName=omop-spark-job&classPath=fr.aphp.id.eds.requester.JsonValidation&context=shared&sync=true&timeout=999999" | grep 'SUCCESS' && if [ $(tail -n 10000 /app/log/job-server.log | grep -c 'java.lang.OutOfMemoryError') != 0 ]; then (cat /app/log/job-server.log >> /app/log/job-server_BACKUP.log && echo "" > /app/log/job-server.log && cat OutOfMemoryErrorDetected); else echo "SJS OK"; fi;" ]
+    #   interval: 70
+    #   timeout: 5s
+    #   retries: 5
+    networks:
+      c360:
+
+
+
+  fhir:
+    image: ${FHIR_IMAGE}
+    container_name: fhir
+    ports:
+      - ${FHIR_LOCAL_PORT}:8080
+    depends_on:
+      pg-db:
+        condition: service_healthy
+    volumes:
+      - ./conf/hapi.application.yaml:/app/config/application.yaml
+    env_file:
+      - env/fhir.env
+    networks:
+      c360:
+    # healthcheck:
+    #   test: [ "CMD-SHELL", "http_proxy='' curl -X GET http://localhost:8080/actuator/health > /dev/null; if [ 0 != $? ]; then exit 1; fi;" ]
+    #   interval: 60
+    #   timeout: 5s
+    #   retries: 5
+
+  portail:
+    build: ./Cohort360-AdministrationPortal
+#    image: ${PORTAIL_IMAGE}
+    container_name: portail
+    ports:
+      - ${PORTAIL_LOCAL_PORT}:5003
+    depends_on:
+      - django
+#      - jwt
+    env_file:
+      - env/portail.env
+    networks:
+      c360:
+
+  front:
+    build: ./Cohort360-FrontEnd
+#    image: ${FRONT_IMAGE}
+    ports:
+      - ${FRONT_LOCAL_PORT}:5003
+    volumes:
+      - ./conf/front.config.json:/app/build/config.json
+    depends_on:
+      - fhir
+      - django
+    container_name: front
+    env_file:
+      - env/front.env
+    networks:
+      c360:
+
+
+  # 3rd party services
+
+  redis:
+    image: ${REDIS_IMAGE}
+    container_name: redis
+    ports:
+      - ${REDIS_LOCAL_PORT}:6382
+    volumes:
+#    this modified configuration disable the disk persistence (to fix potential cache issues)
+      - ./conf/redis.conf:/root/redis.conf
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+    networks:
+      c360:
+
+
+  pg-db:
+    image: postgres:14.3
+    container_name: pg-db
+    ports:
+      - ${PG_LOCAL_PORT}:5432
+    env_file:
+      - env/pg.env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: ${HEALTHCHECK_PERIOD}
+      timeout: 5s
+      retries: 5
+    volumes:
+      - c360-pg-db-2:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      c360:
+
+
+  keycloak:
+    image: ${KEYCLOAK_IMAGE}
+    container_name: keycloak
+    #entrypoint: sleep infinity
+    ports:
+      - ${KEYCLOAK_LOCAL_PORT}:8080
+    env_file:
+      - env/keycloak.env
+    volumes:
+      - ./conf/keycloak-cohort-realm.json:/opt/bitnami/keycloak/data/import/cohort-realm.json
+    networks:
+      c360:
+        ipv4_address: 172.28.0.20
+
+
+volumes:
+    c360-pg-db-2:
+
+networks:
+  c360:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+          gateway: 172.28.0.1

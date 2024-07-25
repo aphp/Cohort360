@@ -1,0 +1,22 @@
+CREATE USER django PASSWORD 'django';
+CREATE DATABASE django OWNER django;
+ALTER USER django CREATEDB;
+GRANT ALL PRIVILEGES ON DATABASE django TO django;
+
+---
+
+CREATE USER bn_keycloak PASSWORD 'bn_keycloak';
+CREATE DATABASE bitnami_keycloak OWNER bn_keycloak;
+GRANT ALL PRIVILEGES ON DATABASE bitnami_keycloak TO bn_keycloak;
+
+---
+
+CREATE USER fhir PASSWORD 'fhir';
+CREATE DATABASE fhir OWNER fhir;
+GRANT ALL PRIVILEGES ON DATABASE fhir TO fhir;
+
+---
+
+CREATE USER omop PASSWORD 'omop';
+CREATE DATABASE omop OWNER omop;
+GRANT ALL PRIVILEGES ON DATABASE omop TO omop;
