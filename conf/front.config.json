@@ -4,11 +4,6 @@
             "docStatus": "http://hl7.org/fhir/CodeSystem/composition-status"
         },
         "extensions": {
-            "codeHierarchy": "https://terminology.eds.aphp.fr/fhir/profile/valueSet/extension/hierarchy-path-id",
-            "conceptMapHierarchy": "https://terminology.eds.aphp.fr/fhir/profile/conceptMap/extension/group-source-hierarchy-path",
-            "patientLastEnconterUrl": "https://terminology.eds.aphp.fr/fhir/profile/patient/extension/last-encounter",
-            "patientTotalAgeDaysExtensionUrl": "https://terminology.eds.aphp.fr/fhir/profile/patient/extension/total-age-day",
-            "patientTotalAgeMonthsExtensionUrl": "https://terminology.eds.aphp.fr/fhir/profile/patient/extension/total-age-month"
         },
         "perimeterSourceTypeHierarchy": [
             "hospital","hospital_depart","hospital_serv"
@@ -94,9 +89,7 @@
         },
         "imaging": {
             "enabled": true,
-            "extensions": {
-                "imagingStudyUid": "https://terminology.eds.aphp.fr/imaging/studyUid"
-            },
+            "extensions": {},
             "valueSets": {
                 "imagingModalities": {
                     "url": "https://dicom.nema.org/medical/dicom/current/output/chtml/part16/sect_CID_33.html"
