@@ -1,0 +1,11 @@
+Bonjour {{`{{ recipient_name }}`}},
+
+{% block content %}
+{% endblock %}
+
+Cordialement,
+
+L'équipe Cohort360
+
+------------------------
+Ce message est envoyé automatiquement, merci de ne pas répondre directement à cet email.

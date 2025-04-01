@@ -9,4 +9,7 @@
 	url = git@github.com:aphp/Cohort360-AdministrationPortal.git
 [submodule "Cohort360-QueryExecutor"]
 	path = Cohort360-QueryExecutor
-	url = https://github.com/aphp/Cohort360-QueryExecutor
+  url = https://github.com/aphp/Cohort360-QueryExecutor.git
+[submodule "fakedata/synthea"]
+  path = fakedata/synthea
+  url = https://github.com/synthetichealth/synthea.git

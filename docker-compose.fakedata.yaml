@@ -1,0 +1,41 @@
+services:
+  fhir-status:
+    image: curlimages/curl
+    networks:
+      c360:
+    depends_on:
+      - fhir
+    entrypoint: ["/bin/sh", "-c", "--", "while true; do sleep 30; done;"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -XGET http://fhir:8080/fhir/metadata > /dev/null"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+
+  fakedata:
+    build: ./fakedata
+    env_file:
+      - env/django.env
+    volumes:
+      - init-status:/app/status
+      - ./valuesets.md:/app/output/valuesets.md
+    healthcheck:
+      test: ["CMD", "bash", "-c", "[ -f /app/status/initialization-complete.flag ] || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      fhir-status:
+        condition: service_healthy
+    networks:
+      c360:
+  
+  progress-tracker:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./conf/progress-dashboard.html:/usr/share/nginx/html/index.html
+      - init-status:/usr/share/nginx/html/data:ro

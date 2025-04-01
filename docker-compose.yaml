@@ -10,7 +10,7 @@ services:
     command: ["-b", "-i", "-d", "-l"]
     volumes:
       - ./conf/perimeters.csv:/perimeters.csv
-      - ./scripts/django-sync-perimeters.py:/app/scripts/django-sync-perimeters.py
+      - ./conf/email_templates:/home/cohort360-backend/app/templates
     depends_on:
       - pg-db
       - redis
@@ -35,11 +35,6 @@ services:
 #      - 5005:5005
     env_file:
       - env/sjs.env
-    # healthcheck:
-    #   test: [ "CMD-SHELL", "http_proxy="" curl -d 'input.cohortDefinitionName = test,input.cohortDefinitionSyntax = "{\"sourcePopulation\":{\"caresiteCohortList\":[1]},\"_type\":\"request\",\"request\":{\"_type\":\"orGroup\",\"_id\":0,\"isInclusive\":true,\"criteria\":[]}}"' -X POST "localhost:8090/jobs?appName=omop-spark-job&classPath=fr.aphp.id.eds.requester.JsonValidation&context=shared&sync=true&timeout=999999" | grep 'SUCCESS' && if [ $(tail -n 10000 /app/log/job-server.log | grep -c 'java.lang.OutOfMemoryError') != 0 ]; then (cat /app/log/job-server.log >> /app/log/job-server_BACKUP.log && echo "" > /app/log/job-server.log && cat OutOfMemoryErrorDetected); else echo "SJS OK"; fi;" ]
-    #   interval: 70
-    #   timeout: 5s
-    #   retries: 5
     networks:
       c360:
 
@@ -55,15 +50,8 @@ services:
         condition: service_healthy
     volumes:
       - ./conf/hapi.application.yaml:/app/config/application.yaml
-    env_file:
-      - env/fhir.env
     networks:
       c360:
-    # healthcheck:
-    #   test: [ "CMD-SHELL", "http_proxy='' curl -X GET http://localhost:8080/actuator/health > /dev/null; if [ 0 != $? ]; then exit 1; fi;" ]
-    #   interval: 60
-    #   timeout: 5s
-    #   retries: 5
 
   portail:
     build: ./Cohort360-AdministrationPortal
@@ -125,7 +113,7 @@ services:
       timeout: 5s
       retries: 5
     volumes:
-      - c360-pg-db-2:/var/lib/postgresql/data
+      - c360-pg-db:/var/lib/postgresql/data
       - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       c360:
@@ -146,8 +134,13 @@ services:
         ipv4_address: 172.28.0.20
 
 
+
+
+
+
 volumes:
-    c360-pg-db-2:
+    c360-pg-db:
+    init-status:
 
 networks:
   c360:

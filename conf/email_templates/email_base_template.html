@@ -1,0 +1,22 @@
+{% load static %}
+<div style="font-size:12pt;color:#000000;font-family:Calibri,Helvetica,sans-serif;" dir="ltr">
+    Bonjour {{`{{ recipient_name }}`}},
+    <br>
+    <br>
+    {% block content %}
+    {% endblock %}
+    <br>
+    <br>
+    Cordialement.
+    <br>
+    <br>
+    L'équipe Cohort360
+    <br>
+    <img width="120px" height="48px" src="cid:logo_cohort360.png" alt="Logo APHP"/>
+    <br>
+    ------------------------
+    <br>
+    <div style="font-size: 11px;color: #555151;">
+        Ce message est envoyé automatiquement, merci de ne pas répondre directement à cet email.
+    </div>
+</div>

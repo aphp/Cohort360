@@ -3,59 +3,60 @@
         "codeSystems": {
             "docStatus": "http://hl7.org/fhir/CodeSystem/composition-status"
         },
-        "extensions": {
+        "extensions": {},
+        "fhir": {
+            "extraSearchParams": false,
+            "facetsExtensions": false,
+            "filterActive": false,
+            "resourceLists": false,
+            "selectedCodeOnly": false,
+            "textSearch": false,
+            "totalCount": true,
+            "valueSetExploration": false,
+            "valuesetExpansion": false
         },
         "perimeterSourceTypeHierarchy": [
-            "hospital","hospital_depart","hospital_serv"
+            "hospital",
+            "hospital_depart",
+            "hospital_serv"
         ],
         "valueSets": {
             "demographicGender": {
-                "url": "https://terminology.eds.aphp.fr/aphp-orbis-patient-genre"
+                "url": "http://hl7.org/fhir/administrative-gender"
             },
             "encounterAdmission": {
-                "url": "https://terminology.eds.aphp.fr/aphp-orbis-visit-type-admission"
+                "url": "<encounter_admission_url>"
             },
             "encounterAdmissionMode": {
-                "url": "https://terminology.eds.aphp.fr/aphp-orbis-visit-motif-admission"
+                "url": "<encounter_admission_mode_url>"
             },
             "encounterDestination": {
-                "url": "https://terminology.eds.aphp.fr/aphp-orbis-visit-destination"
+                "url": "<encounter_destination_url>"
             },
             "encounterEntryMode": {
-                "url": "https://terminology.eds.aphp.fr/aphp-orbis-visit-mode-entree"
+                "url": "<encounter_entry_mode_url>"
             },
             "encounterExitMode": {
-                "url": "https://terminology.eds.aphp.fr/aphp-orbis-visit-mode-sortie"
+                "url": "<encounter_exit_mode_url>"
             },
             "encounterExitType": {
-                "url": "https://terminology.eds.aphp.fr/aphp-orbis-visit-type-sortie"
+                "url": "<encounter_exit_type_url>"
             },
             "encounterFileStatus": {
-                "url": "https://terminology.eds.aphp.fr/aphp-orbis-visite-status"
+                "url": "<encounter_filestatus_url>"
             },
             "encounterProvenance": {
-                "url": "https://terminology.eds.aphp.fr/aphp-orbis-visit-provenance"
+                "url": "<encounter_provenance_url>"
             },
             "encounterSejourType": {
-                "url": "https://terminology.eds.aphp.fr/aphp-orbis-type-sejour"
+                "url": "http://terminology.hl7.org/CodeSystem/v3-ActCode/Encounter.entry.resource.class"
             },
             "encounterStatus": {
                 "url": "http://hl7.org/fhir/CodeSystem/encounter-status"
             },
             "encounterVisitType": {
-                "url": "https://terminology.eds.aphp.fr/aphp-orbis-visit-type"
+                "url": "http://terminology.hl7.org/CodeSystem/v3-ActCode/Encounter.entry.resource.class"
             }
-        },
-        "fhir": {
-            "valueSetExploration": false,
-            "facetsExtensions": false,
-            "filterActive": false,
-            "totalCount": true,
-            "selectedCodeOnly": false,
-            "extraSearchParams": false,
-            "resourceLists": false,
-            "textSearch": false,
-            "valuesetExpansion": false
         }
     },
     "features": {
@@ -70,10 +71,10 @@
             "enabled": true,
             "valueSets": {
                 "conditionHierarchy": {
-                    "url": "https://smt.esante.gouv.fr/terminologie-cim-10/"
+                    "url": "http://snomed.info/sct/Condition.entry.resource.code.coding"
                 },
                 "conditionStatus": {
-                    "url": "https://terminology.eds.aphp.fr/aphp-orbis-condition-status"
+                    "url": "<condition_status_url>"
                 }
             }
         },
@@ -101,37 +102,43 @@
         },
         "medication": {
             "enabled": true,
+            "useMedicationAtcUcdCodes": false,
             "valueSets": {
                 "medicationAdministrations": {
-                    "url": "https://terminology.eds.aphp.fr/aphp-orbis-medicament-voie-administration"
+                    "url": "<medication_administration_url>"
                 },
                 "medicationAtc": {
-                    "url": "https://terminology.eds.aphp.fr/atc"
+                    "url": "http://www.nlm.nih.gov/research/umls/rxnorm"
                 },
                 "medicationAtcOrbis": {
-                    "url": "https://terminology.eds.aphp.fr/aphp-orbis-medicament-atc-article"
+                    "url": "<atc_custom_url>"
                 },
                 "medicationPrescriptionTypes": {
-                    "url": "https://terminology.eds.aphp.fr/aphp-medicament-type-prescription"
+                    "url": "<prescription_type_url>"
                 },
                 "medicationUcd": {
-                    "url": "https://terminology.eds.aphp.fr/smt-medicament-ucd"
+                    "url": "<ucd_url>"
                 }
-            },
-            "useMedicationAtcUcdCodes": false
+            }
         },
         "observation": {
             "enabled": true,
+            "useObservationDefaultValidated": false,
+            "useObservationValueRestriction": false,
             "valueSets": {
                 "biologyHierarchyAnabio": {
-                    "url": "https://terminology.eds.aphp.fr/aphp-itm-anabio"
+                    "url": "<anabio_url>"
                 },
                 "biologyHierarchyLoinc": {
-                    "url": "https://terminology.eds.aphp.fr/aphp-itm-loinc"
+                    "url": "http://loinc.org"
                 }
-            },
-            "useObservationValueRestriction": false,
-            "useObservationDefaultValidated": false
+            }
+        },
+        "patient": {
+            "patientIdentifierExtensionCode": {
+                "code": "SS",
+                "system": "http://terminology.hl7.org/CodeSystem/v2-0203"
+            }
         },
         "procedure": {
             "enabled": true,
@@ -149,7 +156,7 @@
         "exploration": "Exploration"
     },
     "system": {
-        "codeDisplayJWT": "ArrowUp,ArrowUp,ArrowDown,ArrowDown,ArrowLeft,ArrowRight,ArrowLeft,ArrowRight,b,a,Enter",
+        "codeDisplayJWT": "ArrowUp,ArrowDown,ArrowLeft,ArrowRight,a,z,e,r,t,y,Enter",
         "oidc": {
             "clientId": "cohort360",
             "issuer": "http://172.28.0.20:8080/realms/cohort/protocol/openid-connect/auth",
