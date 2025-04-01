@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Initialization Progress</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .progress-bar {
+      height: 20px;
+      background-color: #e0e0e0;
+      border-radius: 10px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background-color: #4caf50;
+      transition: width 0.5s ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+    }
+    .task-list {
+      list-style-type: none;
+      padding: 0;
+    }
+    .task-item {
+      padding: 12px 15px;
+      border-left: 3px solid #ddd;
+      margin-bottom: 10px;
+      background-color: #f9f9f9;
+      border-radius: 0 4px 4px 0;
+      transition: all 0.3s ease;
+    }
+    .task-item.completed {
+      border-left-color: #4caf50;
+      background-color: rgba(76, 175, 80, 0.1);
+    }
+    .task-item.completed::before {
+      content: "✓ ";
+      color: #4caf50;
+    }
+    .task-item.in-progress {
+      border-left-color: #2196F3;
+      background-color: rgba(33, 150, 243, 0.1);
+    }
+    .task-item.in-progress::before {
+      content: "⏳ ";
+      color: #2196F3;
+    }
+    .task-item.pending::before {
+      content: "○ ";
+      color: #757575;
+    }
+    .status {
+      font-weight: bold;
+      margin-top: 20px;
+    }
+    .estimated-time {
+      color: #757575;
+      font-style: italic;
+      margin-top: 8px;
+    }
+    .refresh-button {
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 20px;
+      font-weight: bold;
+      transition: background-color 0.2s;
+    }
+    .refresh-button:hover {
+      background-color: #0b7dda;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .timestamp {
+      font-size: 12px;
+      color: #757575;
+    }
+    .complete-message {
+      padding: 20px;
+      background-color: #4caf50;
+      color: white;
+      text-align: center;
+      border-radius: 8px;
+      margin-top: 20px;
+      display: none;
+      animation: fadeIn 1s;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .section-title {
+      border-bottom: 1px solid #eee;
+      padding-bottom: 8px;
+      margin-top: 30px;
+    }
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(0, 0, 0, 0.1);
+      border-left-color: #2196F3;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .error-message {
+      color: #f44336;
+      padding: 10px;
+      background-color: rgba(244, 67, 54, 0.1);
+      border-radius: 4px;
+      margin-top: 20px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Initialization Progress</h1>
+      <span class="timestamp" id="timestamp">Last updated: Just now</span>
+    </div>
+    
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width: 0%">0%</div>
+    </div>
+    
+    <div class="status" id="status">
+      <div class="spinner"></div>
+      Current status: Starting initialization...
+    </div>
+    <div class="estimated-time" id="estimated-time">Estimated time remaining: Calculating...</div>
+    
+    <h2 class="section-title">Tasks:</h2>
+    <ul class="task-list" id="task-list">
+      <li class="task-item pending" id="task-1">Generating fake data</li>
+      <li class="task-item pending" id="task-2">Loading fhir referentials</li>
+      <li class="task-item pending" id="task-3">Loading hospitals data</li>
+      <li class="task-item pending" id="task-4">Loading practitioners data</li>
+      <li class="task-item pending" id="task-5">Loading patients data</li>
+      <li class="task-item pending" id="task-6">Synchronizing perimeters</li>
+    </ul>
+    
+    <button class="refresh-button" id="refresh-button">Refresh Status</button>
+    
+    <div class="error-message" id="error-message">
+      Unable to fetch the latest status. The initialization service might be starting up or experiencing issues.
+    </div>
+    
+    <div class="complete-message" id="complete-message">
+      <h2>🎉 Initialization Complete! 🎉</h2>
+      <p>All data has been loaded successfully. You can now access your application.</p>
+      <p>The frontend service should be starting now.</p>
+    </div>
+  </div>
+
+  <script>
+    // Function to update progress from status.json
+    function updateProgress() {
+      // Show spinner when fetching
+      document.getElementById('status').classList.add('loading');
+      
+      fetch('/data/status.json')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Status file not available yet');
+          }
+          return response.json();
+        })
+        .then(data => {
+          // Hide error message if it was shown
+          document.getElementById('error-message').style.display = 'none';
+          
+          // Update progress bar
+          document.getElementById('progress-fill').style.width = data.percentComplete + '%';
+          document.getElementById('progress-fill').textContent = data.percentComplete + '%';
+          
+          // Update status message
+          document.getElementById('status').innerHTML = 
+            (data.percentComplete < 100 ? '<div class="spinner"></div>' : '') + 
+            'Current status: ' + data.currentStatus;
+          
+          // Update estimated time
+          document.getElementById('estimated-time').textContent = 
+            'Estimated time remaining: ' + data.timeRemaining;
+          
+          // Update timestamp
+          document.getElementById('timestamp').textContent = 
+            'Last updated: ' + new Date().toLocaleTimeString();
+          
+          // Update task statuses
+          data.tasks.forEach(task => {
+            const taskElement = document.getElementById('task-' + task.id);
+            if (taskElement) {
+              taskElement.className = 'task-item ' + task.status;
+              taskElement.textContent = task.name;
+            }
+          });
+          
+          // Show completion message if done
+          if (data.percentComplete === 100) {
+            document.getElementById('complete-message').style.display = 'block';
+            // Change the refresh button text
+            document.getElementById('refresh-button').textContent = 'Frontend Ready';
+            document.getElementById('refresh-button').style.backgroundColor = '#4caf50';
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching status:', error);
+          // Show error message
+          document.getElementById('error-message').style.display = 'block';
+        });
+    }
+    
+    // Set up periodic updates (every 3 seconds)
+    const updateInterval = setInterval(updateProgress, 3000);
+    
+    // Initial update
+    updateProgress();
+    
+    // Refresh button handler
+    document.getElementById('refresh-button').addEventListener('click', updateProgress);
+    
+    // If the initialization is complete, offer to redirect to the frontend
+    document.getElementById('refresh-button').addEventListener('click', function() {
+      const progressFill = document.getElementById('progress-fill');
+      const percent = parseInt(progressFill.textContent);
+      if (percent === 100) {
+        // Redirect to the frontend application
+        // Change this URL to your frontend application URL
+        window.location.href = 'http://localhost:9808';
+      }
+    });
+  </script>
+</body>
+</html>

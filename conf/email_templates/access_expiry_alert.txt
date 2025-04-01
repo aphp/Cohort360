@@ -1,0 +1,7 @@
+{% extends "email_base_template.txt" %}
+
+{% block content %}
+
+Nous vous informons que vos accès à Cohort360 arriveront à expiration dans {{`{{ expiry_days }}`}} jours.
+
+{% endblock %}
