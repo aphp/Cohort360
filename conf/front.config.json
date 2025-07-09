@@ -157,13 +157,15 @@
     },
     "system": {
         "codeDisplayJWT": "ArrowUp,ArrowDown,ArrowLeft,ArrowRight,a,z,e,r,t,y,Enter",
+        "displayJwtLogin": true,
+        "displayOidcLogin": false,
         "oidc": {
-            "clientId": "cohort360",
-            "issuer": "http://172.28.0.20:8080/realms/cohort/protocol/openid-connect/auth",
-            "redirectUri": "http://localhost:9808",
-            "responseType": "code",
-            "scope": "openid",
-            "state": "mlTPASu3bwdFmFUSK4G4ImecrsKW9pQ7SDdf7uB"
+            "clientId": "",
+            "issuer": "",
+            "redirectUri": "",
+            "responseType": "",
+            "scope": "",
+            "state": ""
         },
         "wsProtocol": "ws://"
     }

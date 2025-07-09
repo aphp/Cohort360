@@ -218,7 +218,7 @@ update_status 85 "Patients data loaded" "a few seconds" 6
 task5_start=$(date +%s)
 echo "Synchronizing perimeters"
 update_status 99 "Synchronizing perimeters" "a few seconds" 6
-curl -XPUT -H "Authorization: Bearer $SJS_TOKEN" http://django:8080/fhir-perimeters/_sync/
+curl -XPUT -H "Authorization: Bearer $QUERY_EXECUTOR_TOKEN" http://django:8080/fhir-perimeters/_sync/
 record_timing "Synchronizing perimeters" $task5_start
 update_status 100 "Initialization complete!" "Complete!" 7
 
