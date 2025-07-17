@@ -184,14 +184,14 @@ def generate_fhir_resources(referentials, output_dir):
         vs_name = f"{resource_type}_{safe_id}_VS"[:64]
         
         # Generate stable UUIDs based on system and path
-        cs_uuid = str(uuid.uuid5(uuid.NAMESPACE_URL, f"{system}|{path}|CS"))
+        #cs_uuid = str(uuid.uuid5(uuid.NAMESPACE_URL, f"{system}|{path}|CS"))
         #vs_uuid = str(uuid.uuid5(uuid.NAMESPACE_URL, f"{system}|{path}|VS"))
         
         # 1. Create CodeSystem first
         codesystem = {
             "resourceType": "CodeSystem",
             "id": f"{safe_id}-cs",
-            "url": cs_uuid,  # This URL must be unique and stable
+            "url": url,  # This URL must be unique and stable
             "version": "1.0.0",
             "name": cs_name,
             "title": f"CodeSystem for {path} with original system {system}",
