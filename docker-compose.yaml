@@ -20,25 +20,23 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      c360:
+      default:
 
-  sjs:
+  query_executor:
     build: ./Cohort360-QueryExecutor
-#     image: ${SJS_IMAGE}
-    container_name: sjs
+#     image: ${QUERY_EXECUTOR_IMAGE}
+    container_name: query_executor
     depends_on:
       - django
       - fhir
     ports:
-      - ${SJS_LOCAL_PORT}:8090
+      - ${QUERY_EXECUTOR_LOCAL_PORT}:8090
 # pour débugger en remote par exemple
 #      - 5005:5005
     env_file:
-      - env/sjs.env
+      - env/query_executor.env
     networks:
-      c360:
-
-
+      default:
 
   fhir:
     image: ${FHIR_IMAGE}
@@ -51,7 +49,7 @@ services:
     volumes:
       - ./conf/hapi.application.yaml:/app/config/application.yaml
     networks:
-      c360:
+      default:
 
   portail:
     build: ./Cohort360-AdministrationPortal
@@ -61,11 +59,10 @@ services:
       - ${PORTAIL_LOCAL_PORT}:5003
     depends_on:
       - django
-#      - jwt
     env_file:
       - env/portail.env
     networks:
-      c360:
+      default:
 
   front:
     build: ./Cohort360-FrontEnd
@@ -81,7 +78,7 @@ services:
     env_file:
       - env/front.env
     networks:
-      c360:
+      default:
 
 
   # 3rd party services
@@ -97,7 +94,7 @@ services:
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
     networks:
-      c360:
+      default:
 
 
   pg-db:
@@ -116,36 +113,10 @@ services:
       - c360-pg-db:/var/lib/postgresql/data
       - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      c360:
-
-
-  keycloak:
-    image: ${KEYCLOAK_IMAGE}
-    container_name: keycloak
-    #entrypoint: sleep infinity
-    ports:
-      - ${KEYCLOAK_LOCAL_PORT}:8080
-    env_file:
-      - env/keycloak.env
-    volumes:
-      - ./conf/keycloak-cohort-realm.json:/opt/bitnami/keycloak/data/import/cohort-realm.json
-    networks:
-      c360:
-        ipv4_address: 172.28.0.20
-
-
-
+      default:
 
 
 
 volumes:
     c360-pg-db:
     init-status:
-
-networks:
-  c360:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.28.0.0/16
-          gateway: 172.28.0.1

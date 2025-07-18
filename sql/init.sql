@@ -5,12 +5,6 @@ GRANT ALL PRIVILEGES ON DATABASE django TO django;
 
 ---
 
-CREATE USER bn_keycloak PASSWORD 'bn_keycloak';
-CREATE DATABASE bitnami_keycloak OWNER bn_keycloak;
-GRANT ALL PRIVILEGES ON DATABASE bitnami_keycloak TO bn_keycloak;
-
----
-
 CREATE USER fhir PASSWORD 'fhir';
 CREATE DATABASE fhir OWNER fhir;
 GRANT ALL PRIVILEGES ON DATABASE fhir TO fhir;

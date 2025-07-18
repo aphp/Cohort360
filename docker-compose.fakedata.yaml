@@ -2,7 +2,7 @@ services:
   fhir-status:
     image: curlimages/curl
     networks:
-      c360:
+      default:
     depends_on:
       - fhir
     entrypoint: ["/bin/sh", "-c", "--", "while true; do sleep 30; done;"]
@@ -15,8 +15,6 @@ services:
 
   fakedata:
     build: ./fakedata
-    env_file:
-      - env/django.env
     volumes:
       - init-status:/app/status
       - ./valuesets.md:/app/output/valuesets.md
@@ -30,7 +28,7 @@ services:
       fhir-status:
         condition: service_healthy
     networks:
-      c360:
+      default:
   
   progress-tracker:
     image: nginx:alpine
